@@ -1,0 +1,19 @@
+RUN STREAMLIT APP (EDGAR)
+
+Where to paste:
+- Open RStudio
+- Go to the "Terminal" tab (NOT the "Console" tab)
+- Paste these commands exactly:
+
+cd C:\Users\DELL\Desktop\MartinGit\edgar
+.\.venv\Scripts\python.exe -m streamlit run app.py
+
+Notes:
+- Do NOT press Ctrl + C unless you want to stop the app.
+- If port 8501 is busy, use:
+  .\.venv\Scripts\python.exe -m streamlit run app.py --server.port 8502
+
+After opening in browser:
+- User-Agent: Your Name your-email@domain.com
+- Ticker: AAPL
+- Click: Load Data

@@ -1,0 +1,9 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+.venv/
+__pycache__/
+*.pyc
+AGENTS.md
+SESSION_NOTES.md
