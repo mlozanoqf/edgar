@@ -128,7 +128,6 @@ def get_submissions(cik: str, user_agent: str) -> dict:
     return sec_get(SUBMISSIONS_URL.format(cik=cik), user_agent)
 
 
-@st.cache_data(ttl=86400)
 def load_local_sec_sic_lookup() -> pd.DataFrame:
     if not SEC_SIC_CACHE_PATH.exists():
         return pd.DataFrame(columns=["cik_str", "sic", "sicDescription"])
@@ -2788,20 +2787,20 @@ def main() -> None:
             st.error("No operating companies with SEC SIC metadata are available for industry-first selection.")
             st.stop()
 
-        with st.sidebar:
-            industry_options = sorted(
-                filtered_ticker_map["industry_group"].dropna().unique().tolist()
-            )
-            if not industry_options:
-                st.error("No industry groups are available for the current issuer category filter.")
-                st.stop()
-            selected_industry_groups = st.multiselect(
-                "Industry group (SEC SIC-based)",
-                industry_options,
-                default=industry_options,
-                key="industry_groups",
-                help="Industry grouping derived from SEC `sicDescription`, not from issuer-name guesses.",
-            )
+        industry_options = sorted(
+            filtered_ticker_map["industry_group"].dropna().unique().tolist()
+        )
+        if not industry_options:
+            st.error("No industry groups are available for the current issuer category filter.")
+            st.stop()
+        st.markdown("**Industry Filter**")
+        selected_industry_groups = st.multiselect(
+            "Industry group (SEC SIC-based)",
+            industry_options,
+            default=industry_options,
+            key="industry_groups",
+            help="Industry grouping derived from SEC `sicDescription`, not from issuer-name guesses.",
+        )
 
         filtered_ticker_map = filtered_ticker_map[filtered_ticker_map["industry_group"].isin(selected_industry_groups)].copy()
         if filtered_ticker_map.empty:
