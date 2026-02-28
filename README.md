@@ -25,6 +25,12 @@ streamlit run app.py
 5. Main file path: `app.py`.
 6. Deploy.
 
+## SEC SIC Industry Cache
+
+- The app's `By industry` mode reads `sec_sic_lookup.csv`.
+- A GitHub Action (`.github/workflows/update_sec_sic_cache.yml`) updates that file automatically once per month and can also be run manually from the Actions tab.
+- Set a repository secret named `SEC_USER_AGENT` (example: `EDGAR Explorer (your-email@domain.com)`) so the workflow can download SEC bulk metadata.
+
 ## SEC usage notes
 
 - Use a clear `User-Agent` with contact info (email) in requests.
