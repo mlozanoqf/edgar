@@ -16,20 +16,170 @@ SUBMISSIONS_URL = "https://data.sec.gov/submissions/CIK{cik}.json"
 ARCHIVES_BASE = "https://www.sec.gov/Archives/edgar/data"
 SEC_SIC_CACHE_PATH = Path(__file__).with_name("sec_sic_lookup.csv")
 
-FACT_TAGS = {
-    "Assets": ["Assets"],
-    "Liabilities": ["Liabilities"],
-    "Equity": [
-        "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest",
-        "StockholdersEquity",
-    ],
-    "Revenue": [
-        "Revenues",
-        "RevenueFromContractWithCustomerExcludingAssessedTax",
-        "SalesRevenueNet",
-    ],
-    "Net Income": ["NetIncomeLoss"],
+ACCOUNT_CATALOG = {
+    "Assets": {
+        "statement": "Balance Sheet",
+        "tags": ["Assets"],
+    },
+    "Liabilities": {
+        "statement": "Balance Sheet",
+        "tags": ["Liabilities"],
+    },
+    "Equity": {
+        "statement": "Balance Sheet",
+        "tags": [
+            "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest",
+            "StockholdersEquity",
+        ],
+    },
+    "Cash": {
+        "statement": "Balance Sheet",
+        "tags": [
+            "CashAndCashEquivalentsAtCarryingValue",
+            "CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents",
+        ],
+    },
+    "Accounts Receivable": {
+        "statement": "Balance Sheet",
+        "tags": [
+            "AccountsReceivableNetCurrent",
+            "ReceivablesNetCurrent",
+        ],
+    },
+    "Inventory": {
+        "statement": "Balance Sheet",
+        "tags": [
+            "InventoryNet",
+            "InventoriesNetOfAllowancesCustomerAdvancesAndProgressBillings",
+        ],
+    },
+    "Current Assets": {
+        "statement": "Balance Sheet",
+        "tags": ["AssetsCurrent"],
+    },
+    "Noncurrent Assets": {
+        "statement": "Balance Sheet",
+        "tags": ["AssetsNoncurrent"],
+    },
+    "PP&E": {
+        "statement": "Balance Sheet",
+        "tags": [
+            "PropertyPlantAndEquipmentNet",
+            "PropertyPlantAndEquipmentAndFinanceLeaseRightOfUseAssetAfterAccumulatedDepreciationAndAmortization",
+        ],
+    },
+    "Current Liabilities": {
+        "statement": "Balance Sheet",
+        "tags": ["LiabilitiesCurrent"],
+    },
+    "Accounts Payable": {
+        "statement": "Balance Sheet",
+        "tags": [
+            "AccountsPayableCurrent",
+            "AccountsPayableAndAccruedLiabilitiesCurrent",
+        ],
+    },
+    "Short-Term Debt": {
+        "statement": "Balance Sheet",
+        "tags": [
+            "ShortTermDebt",
+            "ShortTermBorrowings",
+            "LongTermDebtCurrent",
+            "CurrentPortionOfLongTermDebt",
+            "CurrentPortionOfLongTermDebtAndCapitalLeaseObligations",
+        ],
+    },
+    "Long-Term Debt": {
+        "statement": "Balance Sheet",
+        "tags": [
+            "LongTermDebtNoncurrent",
+            "LongTermDebtAndCapitalLeaseObligationsNoncurrent",
+            "LongTermDebtAndFinanceLeaseLiabilitiesNoncurrent",
+        ],
+    },
+    "Revenue": {
+        "statement": "Income Statement",
+        "tags": [
+            "Revenues",
+            "RevenueFromContractWithCustomerExcludingAssessedTax",
+            "SalesRevenueNet",
+        ],
+    },
+    "COGS": {
+        "statement": "Income Statement",
+        "tags": [
+            "CostOfGoodsSold",
+            "CostOfSales",
+            "CostOfRevenue",
+        ],
+    },
+    "Gross Profit": {
+        "statement": "Income Statement",
+        "tags": ["GrossProfit"],
+    },
+    "Operating Expenses": {
+        "statement": "Income Statement",
+        "tags": ["OperatingExpenses"],
+    },
+    "Operating Income": {
+        "statement": "Income Statement",
+        "tags": ["OperatingIncomeLoss"],
+    },
+    "Interest Expense": {
+        "statement": "Income Statement",
+        "tags": [
+            "InterestExpense",
+            "InterestExpenseAndOther",
+        ],
+    },
+    "Pretax Income": {
+        "statement": "Income Statement",
+        "tags": [
+            "IncomeBeforeTaxExpenseBenefit",
+            "IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest",
+        ],
+    },
+    "Income Tax Expense": {
+        "statement": "Income Statement",
+        "tags": ["IncomeTaxExpenseBenefit"],
+    },
+    "Net Income": {
+        "statement": "Income Statement",
+        "tags": ["NetIncomeLoss"],
+    },
 }
+
+FACT_TAGS = {account: spec["tags"] for account, spec in ACCOUNT_CATALOG.items()}
+CORE_ACCOUNT_DEFAULTS: list[str] = []
+TIME_SERIES_DEFAULTS: list[str] = []
+PANEL_DEFAULTS: list[str] = []
+BALANCE_SHEET_ACCOUNTS = [
+    "Cash",
+    "Accounts Receivable",
+    "Inventory",
+    "Current Assets",
+    "Noncurrent Assets",
+    "PP&E",
+    "Assets",
+    "Accounts Payable",
+    "Short-Term Debt",
+    "Current Liabilities",
+    "Long-Term Debt",
+    "Liabilities",
+    "Equity",
+]
+INCOME_STATEMENT_ACCOUNTS = [
+    "Revenue",
+    "COGS",
+    "Gross Profit",
+    "Operating Expenses",
+    "Operating Income",
+    "Interest Expense",
+    "Pretax Income",
+    "Income Tax Expense",
+    "Net Income",
+]
+ACCOUNT_OPTIONS = BALANCE_SHEET_ACCOUNTS + INCOME_STATEMENT_ACCOUNTS
 
 DEBT_TOTAL_TAGS = {
     "Total debt (direct)": [
@@ -74,8 +224,8 @@ MATURITY_CONCEPT_ORDER = {
 USD_MM_DIVISOR = 1_000_000
 USD_MM_LABEL = "USD mm (1 USD mm = 1,000,000 USD)"
 CROSS_SECTION_KEY_COLS = ["ticker", "fy", "fp", "end", "filed", "form"]
-FLOW_METRICS = {"Revenue", "Net Income"}
-STOCK_METRICS = {"Assets", "Liabilities", "Equity"}
+FLOW_METRICS = {account for account, spec in ACCOUNT_CATALOG.items() if spec["statement"] == "Income Statement"}
+STOCK_METRICS = {account for account, spec in ACCOUNT_CATALOG.items() if spec["statement"] == "Balance Sheet"}
 METHOD_LABELS = {
     "baseline_schedule_only": "Schedule-based",
     "short_term_anchored": "Current-debt adjusted",
@@ -206,81 +356,270 @@ def enrich_ticker_map_with_sec_metadata(ticker_map: pd.DataFrame) -> pd.DataFram
 def classify_sic_industry_group(sic_description: object) -> str:
     txt = str(sic_description or "").upper()
     if not txt or txt == "NAN":
-        return "Unclassified (missing SIC)"
+        return "Unclassified"
     if any(k in txt for k in ["SOFTWARE", "SEMICONDUCTOR", "COMPUTER", "ELECTRONIC", "DATA PROCESSING", "INTERNET"]):
         return "Technology"
     if any(k in txt for k in ["PHARM", "BIO", "MEDIC", "HEALTH", "DIAGNOSTIC"]):
-        return "Healthcare / Life Sciences"
+        return "Healthcare"
     if any(k in txt for k in ["BANK", "FINANCE", "INSUR", "CREDIT", "SAVINGS", "INVESTMENT", "ASSET MANAGEMENT"]):
-        return "Financials / Insurance"
+        return "Financials"
     if any(k in txt for k in ["OIL", "GAS", "PETROLEUM", "ELECTRIC", "POWER", "UTILITY", "PIPELINE", "ENERGY"]):
-        return "Energy / Utilities"
+        return "Energy"
     if any(k in txt for k in ["RETAIL", "APPAREL", "FOOD", "BEVERAGE", "RESTAURANT", "DEPARTMENT STORE", "MERCHANDISE"]):
-        return "Consumer / Retail"
+        return "Consumer"
     if any(k in txt for k in ["AIR", "TRUCK", "TRANSPORT", "LOGISTICS", "AEROSPACE", "MACHINERY", "MANUFACTURING", "INDUSTRIAL"]):
-        return "Industrials / Transportation"
+        return "Industrials"
     if any(k in txt for k in ["REAL ESTATE", "REIT", "CONSTRUCTION", "BUILDING", "PROPERTY"]):
-        return "Real Estate / Construction"
+        return "Realty"
     if any(k in txt for k in ["CHEMICAL", "MINING", "METAL", "STEEL", "LUMBER", "MATERIAL"]):
-        return "Materials / Chemicals"
+        return "Materials"
     if any(k in txt for k in ["COMMUNICATION", "TELEPHONE", "TELECOM", "BROADCAST", "MEDIA", "CABLE"]):
-        return "Telecom / Media"
-    return "Other operating"
+        return "Telecom"
+    return "Other"
+
+
+def account_quality_flag(metric: str, tag: str, source_type: str = "direct") -> str:
+    if source_type == "derived":
+        return "Derived from aligned components"
+    if metric == "Cash" and tag == "CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents":
+        return "Includes restricted cash"
+    if metric == "PP&E" and tag == "PropertyPlantAndEquipmentAndFinanceLeaseRightOfUseAssetAfterAccumulatedDepreciationAndAmortization":
+        return "Includes finance lease ROU assets"
+    if metric == "Accounts Payable" and tag == "AccountsPayableAndAccruedLiabilitiesCurrent":
+        return "Includes accrued liabilities"
+    if metric == "Interest Expense" and tag == "InterestExpenseAndOther":
+        return "Includes other non-interest items"
+    if metric in {"Short-Term Debt", "Long-Term Debt"} and "CapitalLease" in tag:
+        return "Includes capital lease obligations"
+    if metric in {"Short-Term Debt", "Long-Term Debt"} and "FinanceLeaseLiabilities" in tag:
+        return "Includes finance lease obligations"
+    return "Direct"
+
+
+def metric_quality_rank(flag: str) -> int:
+    rank_map = {
+        "Direct": 0,
+        "Includes restricted cash": 1,
+        "Includes accrued liabilities": 1,
+        "Includes capital lease obligations": 1,
+        "Includes finance lease obligations": 1,
+        "Includes finance lease ROU assets": 1,
+        "Includes other non-interest items": 1,
+        "Derived from aligned components": 2,
+    }
+    return rank_map.get(str(flag), 1)
+
+
+def _tag_rows_for_metric(company_facts: dict, ticker: str, metric: str) -> pd.DataFrame:
+    tags = FACT_TAGS.get(metric, [])
+    rows = []
+
+    for tag_rank, tag in enumerate(tags):
+        tag_rows = extract_tag_rows(company_facts, tag)
+        if tag_rows.empty:
+            continue
+        tag_rows = tag_rows.copy()
+        tag_rows["metric"] = metric
+        tag_rows["ticker"] = ticker
+        tag_rows["tag_rank"] = tag_rank
+        tag_rows["source_type"] = "direct"
+        tag_rows["quality_flag"] = account_quality_flag(metric, tag, source_type="direct")
+        tag_rows["quality_rank"] = tag_rows["quality_flag"].map(metric_quality_rank)
+        rows.append(tag_rows)
+
+    if not rows:
+        return pd.DataFrame()
+
+    cols = [
+        "ticker",
+        "metric",
+        "tag",
+        "tag_rank",
+        "source_type",
+        "quality_flag",
+        "quality_rank",
+        "start",
+        "end",
+        "fy",
+        "fp",
+        "form",
+        "val",
+        "filed",
+        "frame",
+    ]
+    return pd.concat(rows, ignore_index=True)[cols]
+
+
+def build_derived_gross_profit_rows(company_facts: dict, ticker: str) -> pd.DataFrame:
+    revenue_rows = _tag_rows_for_metric(company_facts, ticker, "Revenue")
+    cogs_rows = _tag_rows_for_metric(company_facts, ticker, "COGS")
+    if revenue_rows.empty or cogs_rows.empty:
+        return pd.DataFrame()
+
+    merge_keys = ["start", "end", "fy", "fp", "form", "filed"]
+    rev = revenue_rows.copy()
+    cogs = cogs_rows.copy()
+    rev["merge_frame"] = rev["frame"].fillna("")
+    cogs["merge_frame"] = cogs["frame"].fillna("")
+    merge_keys_with_frame = merge_keys + ["merge_frame"]
+
+    paired = rev.merge(
+        cogs,
+        on=merge_keys_with_frame,
+        suffixes=("_rev", "_cogs"),
+        how="inner",
+    )
+    if paired.empty:
+        return pd.DataFrame()
+
+    paired["pair_rank"] = paired["tag_rank_rev"] + paired["tag_rank_cogs"]
+    paired["pair_quality_rank"] = paired["quality_rank_rev"] + paired["quality_rank_cogs"]
+    paired = paired.sort_values(
+        ["filed", "end", "pair_quality_rank", "pair_rank"],
+        ascending=[False, False, True, True],
+    )
+    paired = paired.drop_duplicates(subset=merge_keys_with_frame, keep="first")
+    paired["val"] = paired["val_rev"] - paired["val_cogs"]
+    paired["ticker"] = ticker
+    paired["metric"] = "Gross Profit"
+    paired["tag"] = "DERIVED: Revenue - COGS"
+    paired["tag_rank"] = 999
+    paired["source_type"] = "derived"
+    paired["quality_flag"] = account_quality_flag("Gross Profit", "DERIVED: Revenue - COGS", source_type="derived")
+    paired["quality_rank"] = paired["quality_flag"].map(metric_quality_rank)
+    paired["frame"] = paired["merge_frame"].replace("", None)
+
+    cols = [
+        "ticker",
+        "metric",
+        "tag",
+        "tag_rank",
+        "source_type",
+        "quality_flag",
+        "quality_rank",
+        "start",
+        "end",
+        "fy",
+        "fp",
+        "form",
+        "val",
+        "filed",
+        "frame",
+    ]
+    return paired[cols].copy()
+
+
+def build_derived_noncurrent_assets_rows(company_facts: dict, ticker: str) -> pd.DataFrame:
+    total_asset_rows = _tag_rows_for_metric(company_facts, ticker, "Assets")
+    current_asset_rows = _tag_rows_for_metric(company_facts, ticker, "Current Assets")
+    if total_asset_rows.empty or current_asset_rows.empty:
+        return pd.DataFrame()
+
+    merge_keys = ["start", "end", "fy", "fp", "form", "filed"]
+    total_assets = total_asset_rows.copy()
+    current_assets = current_asset_rows.copy()
+    total_assets["merge_frame"] = total_assets["frame"].fillna("")
+    current_assets["merge_frame"] = current_assets["frame"].fillna("")
+    merge_keys_with_frame = merge_keys + ["merge_frame"]
+
+    paired = total_assets.merge(
+        current_assets,
+        on=merge_keys_with_frame,
+        suffixes=("_total", "_current"),
+        how="inner",
+    )
+    if paired.empty:
+        return pd.DataFrame()
+
+    paired["pair_rank"] = paired["tag_rank_total"] + paired["tag_rank_current"]
+    paired["pair_quality_rank"] = paired["quality_rank_total"] + paired["quality_rank_current"]
+    paired = paired.sort_values(
+        ["filed", "end", "pair_quality_rank", "pair_rank"],
+        ascending=[False, False, True, True],
+    )
+    paired = paired.drop_duplicates(subset=merge_keys_with_frame, keep="first")
+    paired["val"] = paired["val_total"] - paired["val_current"]
+    paired["ticker"] = ticker
+    paired["metric"] = "Noncurrent Assets"
+    paired["tag"] = "DERIVED: Assets - Current Assets"
+    paired["tag_rank"] = 999
+    paired["source_type"] = "derived"
+    paired["quality_flag"] = account_quality_flag(
+        "Noncurrent Assets",
+        "DERIVED: Assets - Current Assets",
+        source_type="derived",
+    )
+    paired["quality_rank"] = paired["quality_flag"].map(metric_quality_rank)
+    paired["frame"] = paired["merge_frame"].replace("", None)
+
+    cols = [
+        "ticker",
+        "metric",
+        "tag",
+        "tag_rank",
+        "source_type",
+        "quality_flag",
+        "quality_rank",
+        "start",
+        "end",
+        "fy",
+        "fp",
+        "form",
+        "val",
+        "filed",
+        "frame",
+    ]
+    return paired[cols].copy()
+
+
+def render_account_selector(default_accounts: list[str], key_prefix: str) -> list[str]:
+    st.markdown("**Balance Sheet Accounts**")
+    balance_defaults = [account for account in default_accounts if account in BALANCE_SHEET_ACCOUNTS]
+    balance_selected = st.multiselect(
+        "Balance Sheet Accounts",
+        BALANCE_SHEET_ACCOUNTS,
+        default=balance_defaults,
+        key=f"{key_prefix}_balance_accounts",
+        label_visibility="collapsed",
+    )
+    st.caption("`PP&E` is a subcomponent of `Noncurrent Assets`; use `Current Assets + Noncurrent Assets` for total-assets reconciliation.")
+    st.markdown("**Income Statement Accounts**")
+    income_defaults = [account for account in default_accounts if account in INCOME_STATEMENT_ACCOUNTS]
+    income_selected = st.multiselect(
+        "Income Statement Accounts",
+        INCOME_STATEMENT_ACCOUNTS,
+        default=income_defaults,
+        key=f"{key_prefix}_income_accounts",
+        label_visibility="collapsed",
+    )
+    return balance_selected + income_selected
+
+
+def render_optional_company_select(ticker_options: list[str], name_map: dict[str, str], key: str) -> str | None:
+    options: list[str | None] = [None] + ticker_options
+    return st.selectbox(
+        "Company",
+        options,
+        index=0,
+        format_func=lambda t: "Select a company..." if t is None else ticker_display_label(str(t), name_map),
+        key=key,
+    )
 
 
 def extract_metric_rows(company_facts: dict, ticker: str) -> pd.DataFrame:
-    us_gaap = company_facts.get("facts", {}).get("us-gaap", {})
     rows = []
 
-    for metric, tags in FACT_TAGS.items():
-        selected_tag = None
-        selected_df = pd.DataFrame()
-
-        for tag in tags:
-            tag_data = us_gaap.get(tag)
-            if not tag_data:
-                continue
-
-            units = tag_data.get("units", {})
-            unit_key = "USD" if "USD" in units else next(iter(units), None)
-            if not unit_key:
-                continue
-
-            candidate = pd.DataFrame(units[unit_key])
-            if candidate.empty:
-                continue
-
-            selected_tag = tag
-            selected_df = candidate
-            break
-
-        if selected_df.empty:
+    for metric in ACCOUNT_OPTIONS:
+        metric_rows = build_metric_rows_for_metric(company_facts, ticker, metric)
+        if metric_rows.empty:
             continue
-
-        needed_cols = ["start", "end", "fy", "fp", "form", "val", "filed", "frame", "segment"]
-        for col in needed_cols:
-            if col not in selected_df.columns:
-                selected_df[col] = None
-
-        selected_df = selected_df[needed_cols].copy()
-        selected_df["metric"] = metric
-        selected_df["tag"] = selected_tag
-        selected_df["ticker"] = ticker
-
-        rows.append(selected_df)
+        rows.append(metric_rows)
 
     if not rows:
         return pd.DataFrame()
 
     df = pd.concat(rows, ignore_index=True)
-    df["val"] = pd.to_numeric(df["val"], errors="coerce")
-    df["fy"] = pd.to_numeric(df["fy"], errors="coerce")
-    df["fy"] = df["fy"].astype("Int64")
-    df["start"] = pd.to_datetime(df["start"], errors="coerce")
-    df["end"] = pd.to_datetime(df["end"], errors="coerce")
-    df["filed"] = pd.to_datetime(df["filed"], errors="coerce")
-    df = df.dropna(subset=["val"])
-    return df[df["segment"].isna()].copy()
+    return df.dropna(subset=["val"]).copy()
 
 
 def extract_tag_rows(company_facts: dict, tag: str) -> pd.DataFrame:
@@ -315,24 +654,14 @@ def extract_tag_rows(company_facts: dict, tag: str) -> pd.DataFrame:
 
 
 def build_metric_rows_for_metric(company_facts: dict, ticker: str, metric: str) -> pd.DataFrame:
-    tags = FACT_TAGS.get(metric, [])
-    rows = []
-
-    for tag_rank, tag in enumerate(tags):
-        tag_rows = extract_tag_rows(company_facts, tag)
-        if tag_rows.empty:
-            continue
-        tag_rows = tag_rows.copy()
-        tag_rows["metric"] = metric
-        tag_rows["ticker"] = ticker
-        tag_rows["tag_rank"] = tag_rank
-        rows.append(tag_rows)
-
-    if not rows:
-        return pd.DataFrame()
-
-    cols = ["ticker", "metric", "tag", "tag_rank", "start", "end", "fy", "fp", "form", "val", "filed", "frame"]
-    return pd.concat(rows, ignore_index=True)[cols]
+    direct_rows = _tag_rows_for_metric(company_facts, ticker, metric)
+    if not direct_rows.empty:
+        return direct_rows
+    if metric == "Noncurrent Assets":
+        return build_derived_noncurrent_assets_rows(company_facts, ticker)
+    if metric == "Gross Profit":
+        return build_derived_gross_profit_rows(company_facts, ticker)
+    return pd.DataFrame()
 
 
 def latest_value_for_year(rows: pd.DataFrame, fiscal_year: int, fy_only: bool = False) -> pd.Series | None:
@@ -1342,30 +1671,13 @@ def app_signature() -> str:
 def render_sidebar_guide() -> None:
     st.markdown("---")
     st.subheader("Quick Guide")
-    st.caption("General")
     st.caption("All monetary values are shown in USD mm.")
     st.caption("Check status: Passed, Warning, or Insufficient data.")
-
-    module = st.selectbox(
-        "Module guide",
-        ["Cross-Section", "Time Series", "Panel", "Debt Distribution"],
-        index=0,
-        key="sidebar_module_guide",
-    )
-
-    if module == "Cross-Section":
-        st.caption("Compare multiple firms at one selected year or quarter.")
-        st.caption("Use this for same-period benchmarking across companies.")
-    elif module == "Time Series":
-        st.caption("Track one company through time for selected accounts.")
-        st.caption("Use year range + frequency filters before interpreting trends.")
-    elif module == "Panel":
-        st.caption("Build long-format multi-company datasets over time.")
-        st.caption("Best when you need export-ready data for modeling.")
-    else:
-        st.caption("Shows company-reported maturity items from SEC facts.")
-        st.caption("Reconciliation compares maturity sum vs debt target.")
-        st.caption("Method labels: Schedule-based and Current-debt adjusted.")
+    st.caption("Use the tabs on the right to switch modules.")
+    st.caption("Cross-Section compares firms in one aligned filing snapshot.")
+    st.caption("Time Series tracks one company through time.")
+    st.caption("Panel builds export-ready multi-company long data.")
+    st.caption("Debt Distribution shows company-reported maturities and reconciliation.")
 
 
 def render_debt_distribution(ticker_options: list[str], ticker_map: pd.DataFrame, user_agent: str) -> None:
@@ -1377,15 +1689,12 @@ def render_debt_distribution(ticker_options: list[str], ticker_map: pd.DataFrame
 
     name_map = dict(zip(ticker_map["ticker"], ticker_map["title"]))
 
-    ticker = st.selectbox(
-        "Company",
-        ticker_options,
-        index=ticker_options.index("AAPL") if "AAPL" in ticker_options else 0,
-        format_func=lambda t: ticker_display_label(str(t), name_map),
-        key="dd_ticker",
-    )
+    ticker = render_optional_company_select(ticker_options, name_map, "dd_ticker")
 
     if st.button("Run Debt Distribution", key="run_dd"):
+        if not ticker:
+            st.warning("Select one company.")
+            return
         try:
             row = ticker_map[ticker_map["ticker"] == ticker]
             if row.empty:
@@ -1902,13 +2211,14 @@ def render_cross_section_chart_block(
     for _, row in pivot_mm.iterrows():
         ticker = row["ticker"]
         for metric in metrics_subset:
-            display_col = f"{cross_section_metric_display_name(metric, period_type)} ({selected_period_label}, USD mm)"
+            account_label = cross_section_metric_display_name(metric, period_type)
+            display_col = f"{account_label} ({selected_period_label}, USD mm)"
             value = row.get(display_col)
             if pd.isna(value):
                 continue
             chart_rows.append(
                 {
-                    "Series": f"{ticker} | {cross_section_metric_display_name(metric, period_type)}",
+                    "Account": account_label,
                     "value_usd_mm": value,
                     "ticker": ticker,
                     "company_name": name_map.get(ticker, ticker),
@@ -1927,7 +2237,7 @@ def render_cross_section_chart_block(
             alt.Chart(chart_df)
             .mark_bar()
             .encode(
-                x=alt.X("Series:N", sort=None, title=None),
+                x=alt.X("Account:N", sort=None, title=None),
                 y=alt.Y("value_usd_mm:Q", title=f"Value ({USD_MM_LABEL})"),
                 color=alt.Color(
                     "company_name:N",
@@ -1936,7 +2246,8 @@ def render_cross_section_chart_block(
                 ),
                 tooltip=[
                     alt.Tooltip("company_name:N", title="Company"),
-                    alt.Tooltip("Series:N", title="Series"),
+                    alt.Tooltip("ticker:N", title="Ticker"),
+                    alt.Tooltip("Account:N", title="Account"),
                     alt.Tooltip("value_usd_mm:Q", title="Value (USD mm)", format=",.2f"),
                 ],
             )
@@ -1944,7 +2255,13 @@ def render_cross_section_chart_block(
         st.altair_chart(chart, use_container_width=True)
     except ImportError:
         st.caption("Company-color grouping is unavailable until `altair` is installed; using fallback chart.")
-        st.bar_chart(chart_df.set_index("Series")[["value_usd_mm"]])
+        fallback_chart = chart_df.pivot_table(
+            index="Account",
+            columns="company_name",
+            values="value_usd_mm",
+            aggfunc="sum",
+        ).fillna(0.0)
+        st.bar_chart(fallback_chart)
 
 
 def select_cross_section_snapshots(data: pd.DataFrame, metrics: list[str], period_type: str) -> pd.DataFrame:
@@ -1959,6 +2276,7 @@ def select_cross_section_snapshots(data: pd.DataFrame, metrics: list[str], perio
     work["has_start"] = work["start"].notna()
     work["period_length_days"] = (work["end"] - work["start"]).dt.days
     work["period_length_days"] = work["period_length_days"].where(work["period_length_days"] >= 0)
+    work["quality_rank"] = work["quality_flag"].map(metric_quality_rank)
     use_ytd_for_flows = period_type.startswith("Quarterly")
     work["flow_duration_priority"] = -1
     if use_ytd_for_flows:
@@ -1966,8 +2284,8 @@ def select_cross_section_snapshots(data: pd.DataFrame, metrics: list[str], perio
         work.loc[flow_mask, "flow_duration_priority"] = work.loc[flow_mask, "period_length_days"].fillna(-1)
 
     work = work.sort_values(
-        ["ticker", "fy", "fp", "end", "filed", "form", "metric", "has_start", "flow_duration_priority", "tag_rank"],
-        ascending=[True, True, True, False, False, False, True, False, False, True],
+        ["ticker", "fy", "fp", "end", "filed", "form", "metric", "has_start", "flow_duration_priority", "quality_rank", "tag_rank"],
+        ascending=[True, True, True, False, False, False, True, False, False, True, True],
     )
     best_rows = work.drop_duplicates(subset=CROSS_SECTION_KEY_COLS + ["metric"], keep="first")
 
@@ -1985,8 +2303,26 @@ def select_cross_section_snapshots(data: pd.DataFrame, metrics: list[str], perio
         values="tag",
     ).reset_index()
     tag_snapshots = tag_snapshots.rename(columns={metric: f"{metric} tag" for metric in metrics if metric in tag_snapshots.columns})
+    quality_snapshots = best_rows.pivot(
+        index=CROSS_SECTION_KEY_COLS,
+        columns="metric",
+        values="quality_flag",
+    ).reset_index()
+    quality_snapshots = quality_snapshots.rename(
+        columns={metric: f"{metric} quality" for metric in metrics if metric in quality_snapshots.columns}
+    )
+    source_snapshots = best_rows.pivot(
+        index=CROSS_SECTION_KEY_COLS,
+        columns="metric",
+        values="source_type",
+    ).reset_index()
+    source_snapshots = source_snapshots.rename(
+        columns={metric: f"{metric} source" for metric in metrics if metric in source_snapshots.columns}
+    )
 
     snapshots = value_snapshots.merge(tag_snapshots, on=CROSS_SECTION_KEY_COLS, how="left")
+    snapshots = snapshots.merge(quality_snapshots, on=CROSS_SECTION_KEY_COLS, how="left")
+    snapshots = snapshots.merge(source_snapshots, on=CROSS_SECTION_KEY_COLS, how="left")
     metric_values = snapshots.reindex(columns=metrics)
     snapshots["available_metric_count"] = metric_values.notna().sum(axis=1)
     snapshots["has_all_selected_metrics"] = snapshots["available_metric_count"] == len(metrics)
@@ -1997,6 +2333,16 @@ def select_cross_section_snapshots(data: pd.DataFrame, metrics: list[str], perio
     snapshots["Balance gap"] = balance_values["Assets"] - snapshots["Liabilities + Equity"]
     snapshots["Balance gap %"] = snapshots["Balance gap"] / balance_values["Assets"].abs()
     snapshots["balance_gap_abs"] = snapshots["Balance gap"].abs().fillna(float("inf"))
+    asset_structure_values = snapshots.reindex(columns=["Assets", "Current Assets", "Noncurrent Assets"])
+    snapshots["has_asset_structure_triplet"] = asset_structure_values.notna().all(axis=1)
+    snapshots["Current + Noncurrent Assets"] = asset_structure_values["Current Assets"] + asset_structure_values["Noncurrent Assets"]
+    snapshots["Asset structure gap"] = asset_structure_values["Assets"] - snapshots["Current + Noncurrent Assets"]
+    snapshots["Asset structure gap %"] = snapshots["Asset structure gap"] / asset_structure_values["Assets"].abs()
+    flow_structure_values = snapshots.reindex(columns=["Revenue", "COGS", "Gross Profit"])
+    snapshots["has_gross_profit_triplet"] = flow_structure_values.notna().all(axis=1)
+    snapshots["Revenue - COGS"] = flow_structure_values["Revenue"] - flow_structure_values["COGS"]
+    snapshots["Gross profit gap"] = flow_structure_values["Gross Profit"] - snapshots["Revenue - COGS"]
+    snapshots["Gross profit gap %"] = snapshots["Gross profit gap"] / flow_structure_values["Revenue"].abs()
     snapshots["flow_basis"] = "As reported"
     if use_ytd_for_flows:
         snapshots["flow_basis"] = "YTD"
@@ -2053,8 +2399,12 @@ def apply_strict_flow_pair_overrides(
             continue
         out.at[idx, "Revenue"] = strict_pair["Revenue"]
         out.at[idx, "Revenue tag"] = strict_pair["Revenue tag"]
+        out.at[idx, "Revenue quality"] = "Direct"
+        out.at[idx, "Revenue source"] = "direct"
         out.at[idx, "Net Income"] = strict_pair["Net Income"]
         out.at[idx, "Net Income tag"] = strict_pair["Net Income tag"]
+        out.at[idx, "Net Income quality"] = "Direct"
+        out.at[idx, "Net Income source"] = "direct"
         out.at[idx, "flow_context_source"] = strict_pair["flow_context_source"]
         out.at[idx, "flow_context_ref"] = strict_pair["flow_context_ref"]
         out.at[idx, "flow_filing_accession"] = strict_pair["flow_filing_accession"]
@@ -2116,8 +2466,14 @@ def apply_strict_flow_pair_to_long_rows(
 
         out.loc[revenue_mask, "val"] = strict_pair["Revenue"]
         out.loc[revenue_mask, "tag"] = strict_pair["Revenue tag"]
+        out.loc[revenue_mask, "source_type"] = "direct"
+        out.loc[revenue_mask, "quality_flag"] = "Direct"
+        out.loc[revenue_mask, "quality_rank"] = 0
         out.loc[net_income_mask, "val"] = strict_pair["Net Income"]
         out.loc[net_income_mask, "tag"] = strict_pair["Net Income tag"]
+        out.loc[net_income_mask, "source_type"] = "direct"
+        out.loc[net_income_mask, "quality_flag"] = "Direct"
+        out.loc[net_income_mask, "quality_rank"] = 0
         out.loc[period_mask, "flow_context_source"] = strict_pair["flow_context_source"]
         out.loc[period_mask, "flow_context_ref"] = strict_pair["flow_context_ref"]
         out.loc[period_mask, "flow_filing_accession"] = strict_pair["flow_filing_accession"]
@@ -2129,21 +2485,20 @@ def render_cross_section(ticker_options: list[str], ticker_map: pd.DataFrame, us
     st.subheader("Cross-Section")
     st.caption("Select one year or quarter and compare multiple companies across selected accounts.")
     st.caption(f"Units: {USD_MM_LABEL}")
+    st.caption(
+        f"Account catalog: {len(BALANCE_SHEET_ACCOUNTS)} simplified balance-sheet accounts and "
+        f"{len(INCOME_STATEMENT_ACCOUNTS)} income-statement accounts. Exports keep the SEC XBRL tag, source type, and quality flag used."
+    )
     name_map = dict(zip(ticker_map["ticker"], ticker_map["title"]))
 
     companies = st.multiselect(
         "Companies",
         ticker_options,
-        default=[t for t in ["AAPL", "MSFT", "GOOGL"] if t in ticker_options],
+        default=[],
         format_func=lambda t: ticker_display_label(str(t), name_map),
         key="cs_companies",
     )
-    metrics = st.multiselect(
-        "Accounts",
-        list(FACT_TAGS.keys()),
-        default=list(FACT_TAGS.keys()),
-        key="cs_metrics",
-    )
+    metrics = render_account_selector(CORE_ACCOUNT_DEFAULTS, "cs")
     period_type = st.selectbox("Period type", ["Annual (FY)", "Quarterly (Q1-Q4)"], key="cs_period_type")
 
     if not companies:
@@ -2337,6 +2692,30 @@ def render_cross_section(ticker_options: list[str], ticker_map: pd.DataFrame, us
         hide_index=True,
         column_config=build_link_column_config(link_cols) if link_cols else None,
     )
+    traceability_rows = []
+    for _, snap_row in selected_snapshots.iterrows():
+        for metric in metrics:
+            if metric not in selected_snapshots.columns or pd.isna(snap_row.get(metric)):
+                continue
+            traceability_rows.append(
+                {
+                    "Ticker": snap_row["ticker"],
+                    "Account": cross_section_metric_display_name(metric, period_type),
+                    "Value (USD mm)": float(snap_row.get(metric)) / USD_MM_DIVISOR,
+                    "Source tag": snap_row.get(f"{metric} tag"),
+                    "Source type": snap_row.get(f"{metric} source"),
+                    "Quality flag": snap_row.get(f"{metric} quality"),
+                }
+            )
+    if traceability_rows:
+        st.caption("Account traceability (visible source tags, direct/derived source type, and quality flags for the selected snapshot).")
+        st.dataframe(pd.DataFrame(traceability_rows), use_container_width=True, hide_index=True)
+
+    badge_specs = {
+        "Passed": ("#1b5e20", "#e8f5e9"),
+        "Warning": ("#8a6d1f", "#fff8e1"),
+        "Review": ("#b71c1c", "#ffebee"),
+    }
 
     has_balance_inputs = all(col in pivot_usd.columns for col in ["Assets", "Liabilities", "Equity"])
     if has_balance_inputs:
@@ -2368,11 +2747,6 @@ def render_cross_section(ticker_options: list[str], ticker_map: pd.DataFrame, us
             f"Warning {status_counts.get('Warning', 0)} | "
             f"Review {status_counts.get('Review', 0)}"
         )
-        badge_specs = {
-            "Passed": ("#1b5e20", "#e8f5e9"),
-            "Warning": ("#8a6d1f", "#fff8e1"),
-            "Review": ("#b71c1c", "#ffebee"),
-        }
         active_badges = []
         for label in ["Passed", "Warning", "Review"]:
             if status_counts.get(label, 0) > 0:
@@ -2388,6 +2762,106 @@ def render_cross_section(ticker_options: list[str], ticker_map: pd.DataFrame, us
                 "Residual differences can reflect issuer-specific equity presentation."
             )
             st.dataframe(balance_display, use_container_width=True, hide_index=True)
+
+    has_asset_structure_inputs = all(col in pivot_usd.columns for col in ["Assets", "Current Assets", "Noncurrent Assets"])
+    if has_asset_structure_inputs:
+        asset_df = selected_snapshots[
+            [
+                "ticker",
+                "Assets",
+                "Current Assets",
+                "Noncurrent Assets",
+                "Current + Noncurrent Assets",
+                "Asset structure gap",
+                "Asset structure gap %",
+            ]
+        ].copy()
+        asset_df["Asset structure check"] = asset_df["Asset structure gap %"].map(balance_check_status)
+        asset_display = asset_df.copy()
+        for col in [
+            "Assets",
+            "Current Assets",
+            "Noncurrent Assets",
+            "Current + Noncurrent Assets",
+            "Asset structure gap",
+        ]:
+            asset_display[col] = asset_display[col] / USD_MM_DIVISOR
+        asset_display["Asset structure gap %"] = asset_display["Asset structure gap %"].map(
+            lambda x: "n/a" if pd.isna(x) else f"{float(x):.2%}"
+        )
+        asset_display = asset_display.rename(
+            columns={
+                "Assets": "Assets (USD mm)",
+                "Current Assets": "Current Assets (USD mm)",
+                "Noncurrent Assets": "Noncurrent Assets (USD mm)",
+                "Current + Noncurrent Assets": "Current + Noncurrent Assets (USD mm)",
+                "Asset structure gap": "Asset structure gap (USD mm)",
+            }
+        )
+        asset_status_counts = asset_df["Asset structure check"].value_counts().to_dict()
+        st.caption(
+            "Asset structure check (Current Assets + Noncurrent Assets = Assets): "
+            f"Passed {asset_status_counts.get('Passed', 0)} | "
+            f"Warning {asset_status_counts.get('Warning', 0)} | "
+            f"Review {asset_status_counts.get('Review', 0)}"
+        )
+        asset_badges = []
+        for label in ["Passed", "Warning", "Review"]:
+            if asset_status_counts.get(label, 0) > 0:
+                fg, bg = badge_specs[label]
+                asset_badges.append(
+                    f"<span style='color:{fg};background:{bg};padding:0.15rem 0.4rem;border-radius:0.35rem;font-weight:700;'>{label}</span>"
+                )
+        if asset_badges:
+            st.markdown(" ".join(asset_badges), unsafe_allow_html=True)
+        with st.expander("Show asset structure diagnostics"):
+            st.caption(
+                "Diagnostic only: `PP&E` is excluded from this identity because it is a subcomponent of `Noncurrent Assets`, not an additive block."
+            )
+            st.dataframe(asset_display, use_container_width=True, hide_index=True)
+
+    has_gross_profit_inputs = all(col in pivot_usd.columns for col in ["Revenue", "COGS", "Gross Profit"])
+    if has_gross_profit_inputs:
+        gross_profit_df = selected_snapshots[
+            ["ticker", "Revenue", "COGS", "Gross Profit", "Revenue - COGS", "Gross profit gap", "Gross profit gap %"]
+        ].copy()
+        gross_profit_df["Gross profit check"] = gross_profit_df["Gross profit gap %"].map(balance_check_status)
+        gross_profit_display = gross_profit_df.copy()
+        for col in ["Revenue", "COGS", "Gross Profit", "Revenue - COGS", "Gross profit gap"]:
+            gross_profit_display[col] = gross_profit_display[col] / USD_MM_DIVISOR
+        gross_profit_display["Gross profit gap %"] = gross_profit_display["Gross profit gap %"].map(
+            lambda x: "n/a" if pd.isna(x) else f"{float(x):.2%}"
+        )
+        gross_profit_display = gross_profit_display.rename(
+            columns={
+                "Revenue": "Revenue (USD mm)",
+                "COGS": "COGS (USD mm)",
+                "Gross Profit": "Gross Profit (USD mm)",
+                "Revenue - COGS": "Revenue - COGS (USD mm)",
+                "Gross profit gap": "Gross profit gap (USD mm)",
+            }
+        )
+        gp_status_counts = gross_profit_df["Gross profit check"].value_counts().to_dict()
+        st.caption(
+            "Gross profit check (Revenue - COGS = Gross Profit): "
+            f"Passed {gp_status_counts.get('Passed', 0)} | "
+            f"Warning {gp_status_counts.get('Warning', 0)} | "
+            f"Review {gp_status_counts.get('Review', 0)}"
+        )
+        gp_badges = []
+        for label in ["Passed", "Warning", "Review"]:
+            if gp_status_counts.get(label, 0) > 0:
+                fg, bg = badge_specs[label]
+                gp_badges.append(
+                    f"<span style='color:{fg};background:{bg};padding:0.15rem 0.4rem;border-radius:0.35rem;font-weight:700;'>{label}</span>"
+                )
+        if gp_badges:
+            st.markdown(" ".join(gp_badges), unsafe_allow_html=True)
+        with st.expander("Show gross profit diagnostics"):
+            st.caption(
+                "Diagnostic only: this identity is meaningful only when `Revenue`, `COGS`, and `Gross Profit` are all available in the same aligned snapshot."
+            )
+            st.dataframe(gross_profit_display, use_container_width=True, hide_index=True)
 
     pivot_csv = selected_snapshots[["ticker", "fy", "fp", "end", "filed", "form"]].copy()
     pivot_csv.insert(1, "period_label", selected_snapshots.apply(lambda r: format_period_label(r["fy"], r["fp"]), axis=1))
@@ -2406,6 +2880,12 @@ def render_cross_section(ticker_options: list[str], ticker_map: pd.DataFrame, us
         tag_col = f"{metric} tag"
         if tag_col in selected_snapshots.columns:
             pivot_csv[tag_col] = selected_snapshots[tag_col]
+        quality_col = f"{metric} quality"
+        if quality_col in selected_snapshots.columns:
+            pivot_csv[quality_col] = selected_snapshots[quality_col]
+        source_col = f"{metric} source"
+        if source_col in selected_snapshots.columns:
+            pivot_csv[source_col] = selected_snapshots[source_col]
     for col in metric_cols:
         pivot_csv[f"{col}_usd_mm"] = pivot_csv[col] / USD_MM_DIVISOR
     if has_balance_inputs:
@@ -2426,22 +2906,15 @@ def render_time_series(ticker_options: list[str], ticker_map: pd.DataFrame, user
     st.caption(f"Units: {USD_MM_LABEL}")
     name_map = dict(zip(ticker_map["ticker"], ticker_map["title"]))
 
-    ticker = st.selectbox(
-        "Company",
-        ticker_options,
-        index=ticker_options.index("AAPL") if "AAPL" in ticker_options else 0,
-        format_func=lambda t: ticker_display_label(str(t), name_map),
-        key="ts_ticker",
-    )
-    metrics = st.multiselect(
-        "Accounts",
-        list(FACT_TAGS.keys()),
-        default=["Revenue", "Net Income", "Assets"],
-        key="ts_metrics",
-    )
+    ticker = render_optional_company_select(ticker_options, name_map, "ts_ticker")
+    metrics = render_account_selector(TIME_SERIES_DEFAULTS, "ts")
+    st.caption("Select from the simplified SEC XBRL account catalog; tables keep the actual source tag, source type, and quality flag.")
     freq = st.selectbox("Frequency", ["Quarterly", "Annual"], key="ts_freq")
 
     if st.button("Run Time Series", key="run_ts"):
+        if not ticker:
+            st.warning("Select one company.")
+            return
         if not metrics:
             st.warning("Select at least one account.")
             return
@@ -2480,7 +2953,8 @@ def render_time_series(ticker_options: list[str], ticker_map: pd.DataFrame, user
             st.error("No rows left after year filter.")
             return
 
-        data = data.sort_values(["end", "metric", "filed"], ascending=[True, True, False])
+        data["quality_rank"] = data["quality_flag"].map(metric_quality_rank)
+        data = data.sort_values(["end", "metric", "filed", "quality_rank", "tag_rank"], ascending=[True, True, False, True, True])
         latest = data.drop_duplicates(subset=["end", "metric"], keep="first").copy()
         if {"Revenue", "Net Income"}.issubset(set(metrics)):
             period_type_label = "Annual (FY)" if freq == "Annual" else "Quarterly (Q1-Q4)"
@@ -2511,7 +2985,7 @@ def render_time_series(ticker_options: list[str], ticker_map: pd.DataFrame, user
                     "Some periods could not be paired from the same filing XBRL context for `Revenue` and `Net Income`; those periods use the aligned companyfacts rows."
                 )
 
-        out_cols = ["ticker", "metric", "fy", "fp", "end", "val", "val_usd_mm", "form", "filed"]
+        out_cols = ["ticker", "metric", "fy", "fp", "end", "val", "val_usd_mm", "tag", "source_type", "quality_flag", "form", "filed"]
         if "flow_context_source" in latest.columns:
             out_cols.extend(["flow_context_source", "flow_context_ref", "flow_filing_accession"])
         out = latest[out_cols].sort_values("end")
@@ -2568,16 +3042,12 @@ def render_panel(ticker_options: list[str], ticker_map: pd.DataFrame, user_agent
     companies = st.multiselect(
         "Companies",
         ticker_options,
-        default=[t for t in ["AAPL", "MSFT", "AMZN"] if t in ticker_options],
+        default=[],
         format_func=lambda t: ticker_display_label(str(t), name_map),
         key="panel_companies",
     )
-    metrics = st.multiselect(
-        "Accounts",
-        list(FACT_TAGS.keys()),
-        default=["Revenue", "Net Income", "Assets", "Liabilities", "Equity"],
-        key="panel_metrics",
-    )
+    metrics = render_account_selector(PANEL_DEFAULTS, "panel")
+    st.caption("Select from the simplified SEC XBRL account catalog; exported rows keep the actual source tag, source type, and quality flag.")
     freq = st.selectbox("Frequency", ["Quarterly", "Annual"], key="panel_freq")
 
     if st.button("Run Panel", key="run_panel"):
@@ -2616,7 +3086,11 @@ def render_panel(ticker_options: list[str], ticker_map: pd.DataFrame, user_agent
             st.error("No rows left after year filter.")
             return
 
-        data = data.sort_values(["ticker", "metric", "end", "filed"], ascending=[True, True, True, False])
+        data["quality_rank"] = data["quality_flag"].map(metric_quality_rank)
+        data = data.sort_values(
+            ["ticker", "metric", "end", "filed", "quality_rank", "tag_rank"],
+            ascending=[True, True, True, False, True, True],
+        )
         latest = data.drop_duplicates(subset=["ticker", "metric", "end"], keep="first").copy()
         if {"Revenue", "Net Income"}.issubset(set(metrics)):
             period_type_label = "Annual (FY)" if freq == "Annual" else "Quarterly (Q1-Q4)"
@@ -2651,7 +3125,7 @@ def render_panel(ticker_options: list[str], ticker_map: pd.DataFrame, user_agent
                     "Some company-period observations could not be paired from the same filing XBRL context for `Revenue` and `Net Income`; those cases use the aligned companyfacts rows."
                 )
 
-        out_cols = ["ticker", "metric", "fy", "fp", "end", "val", "val_usd_mm", "form", "filed"]
+        out_cols = ["ticker", "metric", "fy", "fp", "end", "val", "val_usd_mm", "tag", "source_type", "quality_flag", "form", "filed"]
         if "flow_context_source" in latest.columns:
             out_cols.extend(["flow_context_source", "flow_context_ref", "flow_filing_accession"])
         out = latest[out_cols]
@@ -2713,6 +3187,10 @@ def main() -> None:
             help="SEC asks for identifiable requests with a contact email.",
         ).strip()
         render_sidebar_guide()
+        st.markdown("---")
+        st.caption(app_signature())
+
+    st.subheader("App Controls")
 
     st.info(
         "Free-tier usage notes: SEC EDGAR requires identifiable requests and enforces fair-access limits "
@@ -2735,37 +3213,34 @@ def main() -> None:
         st.error(f"Failed loading SEC ticker list: {exc}")
         st.stop()
 
-    with st.sidebar:
-        st.markdown("---")
-        st.subheader("Issuer Filter")
-        selection_mode = st.radio(
-            "Selection mode",
-            ["By company", "By industry"],
-            index=0,
-            key="selection_mode",
-            help="Choose companies directly, or load the SEC SIC index and narrow by industry first.",
+    st.subheader("Issuer Filter")
+    selection_mode = st.radio(
+        "Selection mode",
+        ["By company", "By industry"],
+        index=0,
+        key="selection_mode",
+        help="Choose companies directly, or load the SEC SIC index and narrow by industry first.",
+    )
+    sic_cache = sec_sic_cache_status()
+    if sic_cache["status"] == "missing":
+        st.caption("SEC SIC cache: missing (`sec_sic_lookup.csv`).")
+    else:
+        modified_txt = sic_cache["modified"].strftime("%Y-%m-%d %H:%M")
+        st.caption(
+            f"SEC SIC cache: {sic_cache['status']} "
+            f"(updated {modified_txt}, age {sic_cache['age_days']} days)."
         )
-        sic_cache = sec_sic_cache_status()
-        if sic_cache["status"] == "missing":
-            st.caption("SEC SIC cache: missing (`sec_sic_lookup.csv`).")
-        else:
-            modified_txt = sic_cache["modified"].strftime("%Y-%m-%d %H:%M")
-            st.caption(
-                f"SEC SIC cache: {sic_cache['status']} "
-                f"(updated {modified_txt}, age {sic_cache['age_days']} days)."
-            )
     filtered_ticker_map = ticker_map.copy()
 
     selected_industry_groups = None
     if selection_mode == "By industry":
-        with st.sidebar:
-            if st.button("Load Local SEC SIC Cache", key="load_sic_index"):
-                st.session_state["sic_index_enabled"] = True
-            st.caption(
-                "Industry-first selection uses a local SEC SIC cache file (`sec_sic_lookup.csv`)."
-            )
+        if st.button("Load Local SEC SIC Cache", key="load_sic_index"):
+            st.session_state["sic_index_enabled"] = True
+        st.caption(
+            "Industry-first selection uses a local SEC SIC cache file (`sec_sic_lookup.csv`)."
+        )
         if not st.session_state.get("sic_index_enabled", False):
-            st.info("Choose `By industry`, then click `Load Local SEC SIC Cache` in the sidebar to enable SEC industry filtering.")
+            st.info("Choose `By industry`, then click `Load Local SEC SIC Cache` above to enable SEC industry filtering.")
             st.stop()
         with st.spinner("Loading local SEC SIC cache..."):
             sic_enriched = enrich_ticker_map_with_sec_metadata(ticker_map)
@@ -2836,8 +3311,6 @@ def main() -> None:
 
     with tab4:
         render_debt_distribution(ticker_options, filtered_ticker_map, user_agent)
-
-    st.caption(app_signature())
 
 
 if __name__ == "__main__":

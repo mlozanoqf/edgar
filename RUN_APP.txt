@@ -3,15 +3,35 @@ RUN STREAMLIT APP (EDGAR)
 Where to paste:
 - Open RStudio
 - Go to the "Terminal" tab (NOT the "Console" tab)
-- Paste these commands exactly:
+- If the terminal is WSL / Bash, paste these commands exactly:
 
-cd C:\Users\DELL\Desktop\MartinGit\edgar
-.\.venv\Scripts\python.exe -m streamlit run app.py
+cd /mnt/c/Users/DELL/Desktop/MartinGit/edgar
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m streamlit run app.py
+
+If `python3 -m venv .venv` fails with an `ensurepip` / `python3-venv` error, run first:
+
+sudo apt update
+sudo apt install -y python3-venv python3-pip
+
+If the terminal is Windows PowerShell instead, use:
+
+cd "C:\Users\DELL\Desktop\MartinGit\edgar"
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m streamlit run app.py
 
 Notes:
 - Do NOT press Ctrl + C unless you want to stop the app.
+- Open the preview in your browser at:
+  http://localhost:8501
 - If port 8501 is busy, use:
-  .\.venv\Scripts\python.exe -m streamlit run app.py --server.port 8502
+  python -m streamlit run app.py --server.port 8502
 
 After opening in browser:
 - User-Agent: Your Name your-email@domain.com

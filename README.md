@@ -12,8 +12,30 @@ Simple Streamlit app to extract company filings and financial facts from SEC EDG
 ## Local run
 
 ```bash
-pip install -r requirements.txt
-streamlit run app.py
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m streamlit run app.py
+```
+
+Open the local preview in your browser at `http://localhost:8501`.
+
+If `python3 -m venv .venv` fails in WSL/Debian-based Linux because `ensurepip` is missing, install the required packages first:
+
+```bash
+sudo apt update
+sudo apt install -y python3-venv python3-pip
+```
+
+If you prefer to run the app from Windows PowerShell instead of WSL, install Python for Windows first and then use:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m streamlit run app.py
 ```
 
 ## Deploy to Streamlit Community Cloud
