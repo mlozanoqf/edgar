@@ -1,39 +1,39 @@
 RUN STREAMLIT APP (EDGAR)
 
-Where to paste:
-- Open RStudio
-- Go to the "Terminal" tab (NOT the "Console" tab)
-- If the terminal is WSL / Bash, paste these commands exactly:
+FASTEST OPTION IF YOU ARE USING WSL / BASH
+- Open RStudio Terminal or any Bash terminal
+- Run:
 
 cd /mnt/c/Users/DELL/Desktop/MartinGit/edgar
+.venv/bin/python -m streamlit run app.py
+
+If `.venv` does not exist yet, create it once:
+
 python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-python -m streamlit run app.py
+.venv/bin/python -m pip install --upgrade pip
+.venv/bin/python -m pip install -r requirements.txt
 
 If `python3 -m venv .venv` fails with an `ensurepip` / `python3-venv` error, run first:
 
 sudo apt update
 sudo apt install -y python3-venv python3-pip
 
-If the terminal is Windows PowerShell instead, use:
+FASTEST OPTION IF YOU ARE USING WINDOWS POWERSHELL
+- Open PowerShell in the repo folder
+- Run:
 
 cd "C:\Users\DELL\Desktop\MartinGit\edgar"
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-python -m streamlit run app.py
+powershell -ExecutionPolicy Bypass -File .\run_preview.ps1
 
-Notes:
+Useful variants:
+
+powershell -ExecutionPolicy Bypass -File .\run_preview.ps1 -RefreshDeps
+powershell -ExecutionPolicy Bypass -File .\run_preview.ps1 -Port 8502
+
+NOTES
+- The repo's current `.venv` is Linux/WSL-only. The PowerShell helper now prefers a real Windows Python when available, but automatically falls back to the existing WSL environment if PowerShell only sees the Microsoft Store alias.
 - Do NOT press Ctrl + C unless you want to stop the app.
 - Open the preview in your browser at:
   http://localhost:8501
-- If port 8501 is busy, use:
-  python -m streamlit run app.py --server.port 8502
+- Streamlit Community Cloud is for the deployed app after commit/push; local preview is the fastest way to inspect edits before that.
 
-After opening in browser:
-- User-Agent: Your Name your-email@domain.com
-- Ticker: AAPL
-- Click: Load Data

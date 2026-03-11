@@ -15,8 +15,9 @@ COMPANYFACTS_URL = "https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json"
 SUBMISSIONS_URL = "https://data.sec.gov/submissions/CIK{cik}.json"
 ARCHIVES_BASE = "https://www.sec.gov/Archives/edgar/data"
 SEC_SIC_CACHE_PATH = Path(__file__).with_name("sec_sic_lookup.csv")
+DISTRIBUTION_CACHE_PATH = Path(__file__).with_name("distribution_cache.csv.gz")
 
-ACCOUNT_CATALOG = {
+SIMPLIFIED_ACCOUNT_CATALOG = {
     "Assets": {
         "statement": "Balance Sheet",
         "tags": ["Assets"],
@@ -71,6 +72,10 @@ ACCOUNT_CATALOG = {
     "Current Liabilities": {
         "statement": "Balance Sheet",
         "tags": ["LiabilitiesCurrent"],
+    },
+    "Noncurrent Liabilities": {
+        "statement": "Balance Sheet",
+        "tags": ["LiabilitiesNoncurrent"],
     },
     "Accounts Payable": {
         "statement": "Balance Sheet",
@@ -149,11 +154,95 @@ ACCOUNT_CATALOG = {
     },
 }
 
+SPECIFIC_ACCOUNT_CATALOG = {
+    **SIMPLIFIED_ACCOUNT_CATALOG,
+    "Restricted Cash": {
+        "statement": "Balance Sheet",
+        "tags": [
+            "RestrictedCashAndCashEquivalentsAtCarryingValue",
+            "RestrictedCashEquivalentsCurrentAndNoncurrent",
+            "RestrictedCashCurrent",
+        ],
+    },
+    "Short-Term Investments": {
+        "statement": "Balance Sheet",
+        "tags": [
+            "ShortTermInvestments",
+            "AvailableForSaleSecuritiesCurrent",
+        ],
+    },
+    "Goodwill": {
+        "statement": "Balance Sheet",
+        "tags": ["Goodwill"],
+    },
+    "Intangible Assets": {
+        "statement": "Balance Sheet",
+        "tags": [
+            "FiniteLivedIntangibleAssetsNet",
+            "IntangibleAssetsNetExcludingGoodwill",
+            "IndefiniteLivedIntangibleAssetsExcludingGoodwill",
+        ],
+    },
+    "Operating Lease ROU Asset": {
+        "statement": "Balance Sheet",
+        "tags": ["OperatingLeaseRightOfUseAsset"],
+    },
+    "Accrued Liabilities": {
+        "statement": "Balance Sheet",
+        "tags": ["AccruedLiabilitiesCurrent"],
+    },
+    "Current Contract Liabilities": {
+        "statement": "Balance Sheet",
+        "tags": [
+            "ContractWithCustomerLiabilityCurrent",
+            "ContractLiabilitiesCurrent",
+            "DeferredRevenueCurrent",
+        ],
+    },
+    "Operating Lease Liability (Current)": {
+        "statement": "Balance Sheet",
+        "tags": ["OperatingLeaseLiabilityCurrent"],
+    },
+    "Operating Lease Liability (Noncurrent)": {
+        "statement": "Balance Sheet",
+        "tags": ["OperatingLeaseLiabilityNoncurrent"],
+    },
+    "Research and Development": {
+        "statement": "Income Statement",
+        "tags": ["ResearchAndDevelopmentExpense"],
+    },
+    "SG&A": {
+        "statement": "Income Statement",
+        "tags": ["SellingGeneralAndAdministrativeExpense"],
+    },
+    "Depreciation & Amortization": {
+        "statement": "Income Statement",
+        "tags": ["DepreciationDepletionAndAmortization"],
+    },
+    "Share-Based Compensation": {
+        "statement": "Income Statement",
+        "tags": ["ShareBasedCompensation"],
+    },
+    "Other Nonoperating Income (Expense)": {
+        "statement": "Income Statement",
+        "tags": ["OtherNonoperatingIncomeExpense"],
+    },
+    "Asset Impairment Charges": {
+        "statement": "Income Statement",
+        "tags": ["AssetImpairmentCharges"],
+    },
+    "Restructuring Charges": {
+        "statement": "Income Statement",
+        "tags": ["RestructuringCharges"],
+    },
+}
+
+ACCOUNT_CATALOG = SPECIFIC_ACCOUNT_CATALOG
 FACT_TAGS = {account: spec["tags"] for account, spec in ACCOUNT_CATALOG.items()}
 CORE_ACCOUNT_DEFAULTS: list[str] = []
 TIME_SERIES_DEFAULTS: list[str] = []
 PANEL_DEFAULTS: list[str] = []
-BALANCE_SHEET_ACCOUNTS = [
+SIMPLIFIED_BALANCE_SHEET_ACCOUNTS = [
     "Cash",
     "Accounts Receivable",
     "Inventory",
@@ -164,11 +253,12 @@ BALANCE_SHEET_ACCOUNTS = [
     "Accounts Payable",
     "Short-Term Debt",
     "Current Liabilities",
+    "Noncurrent Liabilities",
     "Long-Term Debt",
     "Liabilities",
     "Equity",
 ]
-INCOME_STATEMENT_ACCOUNTS = [
+SIMPLIFIED_INCOME_STATEMENT_ACCOUNTS = [
     "Revenue",
     "COGS",
     "Gross Profit",
@@ -179,7 +269,79 @@ INCOME_STATEMENT_ACCOUNTS = [
     "Income Tax Expense",
     "Net Income",
 ]
+SIMPLIFIED_ACCOUNT_OPTIONS = SIMPLIFIED_BALANCE_SHEET_ACCOUNTS + SIMPLIFIED_INCOME_STATEMENT_ACCOUNTS
+SPECIFIC_BALANCE_SHEET_ACCOUNTS = [
+    "Cash",
+    "Restricted Cash",
+    "Short-Term Investments",
+    "Accounts Receivable",
+    "Inventory",
+    "Current Assets",
+    "Goodwill",
+    "Intangible Assets",
+    "Operating Lease ROU Asset",
+    "PP&E",
+    "Noncurrent Assets",
+    "Assets",
+    "Accounts Payable",
+    "Accrued Liabilities",
+    "Current Contract Liabilities",
+    "Short-Term Debt",
+    "Current Liabilities",
+    "Operating Lease Liability (Current)",
+    "Operating Lease Liability (Noncurrent)",
+    "Noncurrent Liabilities",
+    "Long-Term Debt",
+    "Liabilities",
+    "Equity",
+]
+SPECIFIC_INCOME_STATEMENT_ACCOUNTS = [
+    "Revenue",
+    "COGS",
+    "Gross Profit",
+    "Research and Development",
+    "SG&A",
+    "Operating Expenses",
+    "Operating Income",
+    "Depreciation & Amortization",
+    "Share-Based Compensation",
+    "Interest Expense",
+    "Other Nonoperating Income (Expense)",
+    "Pretax Income",
+    "Income Tax Expense",
+    "Net Income",
+    "Asset Impairment Charges",
+    "Restructuring Charges",
+]
+BALANCE_SHEET_ACCOUNTS = SPECIFIC_BALANCE_SHEET_ACCOUNTS
+INCOME_STATEMENT_ACCOUNTS = SPECIFIC_INCOME_STATEMENT_ACCOUNTS
 ACCOUNT_OPTIONS = BALANCE_SHEET_ACCOUNTS + INCOME_STATEMENT_ACCOUNTS
+ACCOUNT_MODE_CONFIG = {
+    "Simplified Statements": {
+        "catalog_caption": (
+            "Designed for summarized, textbook-style financial statements. "
+            "This mode prioritizes statement consistency and structural diagnostics over detail."
+        ),
+        "coverage_caption": (
+            "Use this mode when you want a compact statement view that is easier to compare across companies."
+        ),
+        "balance_accounts": SIMPLIFIED_BALANCE_SHEET_ACCOUNTS,
+        "income_accounts": SIMPLIFIED_INCOME_STATEMENT_ACCOUNTS,
+        "enable_structure_checks": True,
+    },
+    "Specific Account Explorer": {
+        "catalog_caption": (
+            "Designed for more detailed concept-level extraction. "
+            "This mode expands the catalog and accepts that coverage can vary across companies and periods."
+        ),
+        "coverage_caption": (
+            "Use this mode when you care about a specific account and are willing to trade statement-closing diagnostics for detail and traceability."
+        ),
+        "balance_accounts": SPECIFIC_BALANCE_SHEET_ACCOUNTS,
+        "income_accounts": SPECIFIC_INCOME_STATEMENT_ACCOUNTS,
+        "enable_structure_checks": False,
+    },
+}
 
 DEBT_TOTAL_TAGS = {
     "Total debt (direct)": [
@@ -353,6 +515,26 @@ def enrich_ticker_map_with_sec_metadata(ticker_map: pd.DataFrame) -> pd.DataFram
     return enriched
 
 
+def select_operating_company_ticker_map(enriched_ticker_map: pd.DataFrame) -> pd.DataFrame:
+    if enriched_ticker_map.empty:
+        return pd.DataFrame()
+    required_cols = ["issuer_category", "sicDescription"]
+    if any(col not in enriched_ticker_map.columns for col in required_cols):
+        return pd.DataFrame()
+    filtered = enriched_ticker_map[
+        (enriched_ticker_map["issuer_category"] == "Operating company (SEC SIC-based)")
+        & enriched_ticker_map["sicDescription"].notna()
+    ].copy()
+    return filtered
+
+
+def filter_operating_company_ticker_map(ticker_map: pd.DataFrame) -> pd.DataFrame:
+    enriched = enrich_ticker_map_with_sec_metadata(ticker_map)
+    if enriched.empty:
+        return pd.DataFrame()
+    return select_operating_company_ticker_map(enriched)
+
+
 def classify_sic_industry_group(sic_description: object) -> str:
     txt = str(sic_description or "").upper()
     if not txt or txt == "NAN":
@@ -387,6 +569,10 @@ def account_quality_flag(metric: str, tag: str, source_type: str = "direct") -> 
         return "Includes finance lease ROU assets"
     if metric == "Accounts Payable" and tag == "AccountsPayableAndAccruedLiabilitiesCurrent":
         return "Includes accrued liabilities"
+    if metric == "Short-Term Investments" and tag == "AvailableForSaleSecuritiesCurrent":
+        return "Available-for-sale securities proxy"
+    if metric == "Current Contract Liabilities" and tag in {"ContractLiabilitiesCurrent", "DeferredRevenueCurrent"}:
+        return "Deferred revenue / contract liability proxy"
     if metric == "Interest Expense" and tag == "InterestExpenseAndOther":
         return "Includes other non-interest items"
     if metric in {"Short-Term Debt", "Long-Term Debt"} and "CapitalLease" in tag:
@@ -401,6 +587,8 @@ def metric_quality_rank(flag: str) -> int:
         "Direct": 0,
         "Includes restricted cash": 1,
         "Includes accrued liabilities": 1,
+        "Available-for-sale securities proxy": 1,
+        "Deferred revenue / contract liability proxy": 1,
         "Includes capital lease obligations": 1,
         "Includes finance lease obligations": 1,
         "Includes finance lease ROU assets": 1,
@@ -572,22 +760,115 @@ def build_derived_noncurrent_assets_rows(company_facts: dict, ticker: str) -> pd
     return paired[cols].copy()
 
 
-def render_account_selector(default_accounts: list[str], key_prefix: str) -> list[str]:
+def build_derived_noncurrent_liabilities_rows(company_facts: dict, ticker: str) -> pd.DataFrame:
+    total_liability_rows = _tag_rows_for_metric(company_facts, ticker, "Liabilities")
+    current_liability_rows = _tag_rows_for_metric(company_facts, ticker, "Current Liabilities")
+    if total_liability_rows.empty or current_liability_rows.empty:
+        return pd.DataFrame()
+
+    merge_keys = ["start", "end", "fy", "fp", "form", "filed"]
+    total_liabilities = total_liability_rows.copy()
+    current_liabilities = current_liability_rows.copy()
+    total_liabilities["merge_frame"] = total_liabilities["frame"].fillna("")
+    current_liabilities["merge_frame"] = current_liabilities["frame"].fillna("")
+    merge_keys_with_frame = merge_keys + ["merge_frame"]
+
+    paired = total_liabilities.merge(
+        current_liabilities,
+        on=merge_keys_with_frame,
+        suffixes=("_total", "_current"),
+        how="inner",
+    )
+    if paired.empty:
+        return pd.DataFrame()
+
+    paired["pair_rank"] = paired["tag_rank_total"] + paired["tag_rank_current"]
+    paired["pair_quality_rank"] = paired["quality_rank_total"] + paired["quality_rank_current"]
+    paired = paired.sort_values(
+        ["filed", "end", "pair_quality_rank", "pair_rank"],
+        ascending=[False, False, True, True],
+    )
+    paired = paired.drop_duplicates(subset=merge_keys_with_frame, keep="first")
+    paired["val"] = paired["val_total"] - paired["val_current"]
+    paired["ticker"] = ticker
+    paired["metric"] = "Noncurrent Liabilities"
+    paired["tag"] = "DERIVED: Liabilities - Current Liabilities"
+    paired["tag_rank"] = 999
+    paired["source_type"] = "derived"
+    paired["quality_flag"] = account_quality_flag(
+        "Noncurrent Liabilities",
+        "DERIVED: Liabilities - Current Liabilities",
+        source_type="derived",
+    )
+    paired["quality_rank"] = paired["quality_flag"].map(metric_quality_rank)
+    paired["frame"] = paired["merge_frame"].replace("", None)
+
+    cols = [
+        "ticker",
+        "metric",
+        "tag",
+        "tag_rank",
+        "source_type",
+        "quality_flag",
+        "quality_rank",
+        "start",
+        "end",
+        "fy",
+        "fp",
+        "form",
+        "val",
+        "filed",
+        "frame",
+    ]
+    return paired[cols].copy()
+
+
+def get_account_mode_spec(account_mode: str) -> dict:
+    return ACCOUNT_MODE_CONFIG.get(account_mode, ACCOUNT_MODE_CONFIG["Simplified Statements"])
+
+
+def render_account_mode_selector(key: str) -> str:
+    return st.radio(
+        "Account mode",
+        list(ACCOUNT_MODE_CONFIG.keys()),
+        horizontal=True,
+        key=key,
+        help=(
+            "Simplified Statements prioritizes summarized, statement-consistent accounts and structural checks. "
+            "Specific Account Explorer exposes a wider concept catalog and makes coverage differences explicit."
+        ),
+    )
+
+
+def render_account_selector(default_accounts: list[str], key_prefix: str, account_mode: str) -> list[str]:
+    mode_spec = get_account_mode_spec(account_mode)
+    balance_accounts = mode_spec["balance_accounts"]
+    income_accounts = mode_spec["income_accounts"]
+
     st.markdown("**Balance Sheet Accounts**")
-    balance_defaults = [account for account in default_accounts if account in BALANCE_SHEET_ACCOUNTS]
+    balance_defaults = [account for account in default_accounts if account in balance_accounts]
     balance_selected = st.multiselect(
         "Balance Sheet Accounts",
-        BALANCE_SHEET_ACCOUNTS,
+        balance_accounts,
         default=balance_defaults,
         key=f"{key_prefix}_balance_accounts",
         label_visibility="collapsed",
     )
-    st.caption("`PP&E` is a subcomponent of `Noncurrent Assets`; use `Current Assets + Noncurrent Assets` for total-assets reconciliation.")
+    if mode_spec["enable_structure_checks"]:
+        st.caption("`PP&E` is a subcomponent of `Noncurrent Assets`; use `Current Assets + Noncurrent Assets` for total-assets reconciliation.")
+        st.caption("`Long-Term Debt` is not the same as `Noncurrent Liabilities`; use `Current Liabilities + Noncurrent Liabilities` for total-liabilities reconciliation.")
+    else:
+        st.caption(
+            "Advanced catalog: coverage can vary by issuer. Missing values stay missing when the selected concept is not reported under the strict extraction policy."
+        )
+        st.caption(
+            "These accounts are canonical concept families. Always review the exported SEC tag, source type, and quality flag before treating them as perfectly homogeneous across issuers."
+        )
     st.markdown("**Income Statement Accounts**")
-    income_defaults = [account for account in default_accounts if account in INCOME_STATEMENT_ACCOUNTS]
+    income_defaults = [account for account in default_accounts if account in income_accounts]
     income_selected = st.multiselect(
         "Income Statement Accounts",
-        INCOME_STATEMENT_ACCOUNTS,
+        income_accounts,
         default=income_defaults,
         key=f"{key_prefix}_income_accounts",
         label_visibility="collapsed",
@@ -659,6 +940,8 @@ def build_metric_rows_for_metric(company_facts: dict, ticker: str, metric: str) 
         return direct_rows
     if metric == "Noncurrent Assets":
         return build_derived_noncurrent_assets_rows(company_facts, ticker)
+    if metric == "Noncurrent Liabilities":
+        return build_derived_noncurrent_liabilities_rows(company_facts, ticker)
     if metric == "Gross Profit":
         return build_derived_gross_profit_rows(company_facts, ticker)
     return pd.DataFrame()
@@ -798,6 +1081,50 @@ def maturity_label_sort_value(label: str, fiscal_year: int) -> int:
     return fiscal_year + 200
 
 
+def finalize_maturity_rows(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return pd.DataFrame()
+
+    out = df.copy()
+    out["include_in_sum"] = False
+    out["exclusion_reason"] = "not selected"
+    out["scope_rank"] = out["tag"].map(tag_scope).map(
+        lambda scope: 0 if scope == "debt-only" else 1 if scope == "debt+lease" else 2
+    )
+    out["fy_rank"] = (out["fp"] == "FY").astype(int)
+
+    detailed_present = any(out["concept"].isin(["year_2", "year_3", "year_4", "year_5"]))
+    candidate_df = out[out["concept"] != "other"].copy()
+    if detailed_present:
+        candidate_df = candidate_df[candidate_df["concept"] != "years_2_to_5_agg"].copy()
+
+    if not candidate_df.empty:
+        for concept in candidate_df["concept"].drop_duplicates().tolist():
+            concept_rows = candidate_df[candidate_df["concept"] == concept].copy()
+            if concept_rows.empty:
+                continue
+            concept_rows = concept_rows.sort_values(
+                ["scope_rank", "fy_rank", "filed", "end", "amount"],
+                ascending=[True, False, False, False, False],
+            )
+            chosen_idx = concept_rows.index[0]
+            out.loc[chosen_idx, "include_in_sum"] = True
+            out.loc[chosen_idx, "exclusion_reason"] = ""
+
+    if detailed_present:
+        agg_mask = out["concept"] == "years_2_to_5_agg"
+        out.loc[agg_mask, "exclusion_reason"] = "Excluded because detailed Y2-Y5 exists"
+
+    duplicate_mask = (out["concept"] != "other") & (~out["include_in_sum"]) & (out["exclusion_reason"] == "not selected")
+    out.loc[duplicate_mask, "exclusion_reason"] = "Duplicate concept (alternative tag)"
+    out = out.drop(columns=["scope_rank", "fy_rank"], errors="ignore")
+    out = out.sort_values(
+        by=["concept", "item"],
+        key=lambda c: c.map(lambda x: MATURITY_CONCEPT_ORDER.get(str(x), 99)) if c.name == "concept" else c,
+    )
+    return out.reset_index(drop=True)
+
+
 def build_company_reported_maturity_rows(company_facts: dict, fiscal_year: int, fy_only: bool = True) -> pd.DataFrame:
     us_gaap = company_facts.get("facts", {}).get("us-gaap", {})
     tags = [tag for tag in us_gaap.keys() if is_maturity_tag(tag)]
@@ -824,37 +1151,7 @@ def build_company_reported_maturity_rows(company_facts: dict, fiscal_year: int, 
     if not rows:
         return pd.DataFrame()
 
-    df = pd.DataFrame(rows)
-    df["include_in_sum"] = False
-    df["exclusion_reason"] = "not selected"
-
-    detailed_present = any(df["concept"].isin(["year_2", "year_3", "year_4", "year_5"]))
-    candidate_df = df.copy()
-    if detailed_present:
-        candidate_df = candidate_df[candidate_df["concept"] != "years_2_to_5_agg"].copy()
-
-    candidate_df = candidate_df[candidate_df["concept"] != "other"].copy()
-    if not candidate_df.empty:
-        for concept in candidate_df["concept"].unique().tolist():
-            concept_rows = candidate_df[candidate_df["concept"] == concept].copy()
-            if concept_rows.empty:
-                continue
-            concept_rows["score"] = 0
-            concept_rows.loc[concept_rows["tag"].str.contains("AndFinanceLeaseLiabilities", na=False), "score"] += 2
-            concept_rows.loc[concept_rows["fp"] == "FY", "score"] += 1
-            concept_rows = concept_rows.sort_values(["score", "filed", "end"], ascending=[False, False, False])
-            chosen_idx = concept_rows.index[0]
-            df.loc[chosen_idx, "include_in_sum"] = True
-            df.loc[chosen_idx, "exclusion_reason"] = ""
-
-    if detailed_present:
-        df.loc[df["concept"] == "years_2_to_5_agg", "exclusion_reason"] = "Excluded because detailed Y2-Y5 exists"
-
-    duplicate_mask = (df["concept"] != "other") & (~df["include_in_sum"]) & (df["exclusion_reason"] == "not selected")
-    df.loc[duplicate_mask, "exclusion_reason"] = "Duplicate concept (alternative tag)"
-    df = df.sort_values(by=["concept", "item"], key=lambda c: c.map(lambda x: MATURITY_CONCEPT_ORDER.get(str(x), 99)) if c.name == "concept" else c)
-    return df.reset_index(drop=True)
-
+    return finalize_maturity_rows(pd.DataFrame(rows))
 
 def split_tag(tag: str) -> tuple[str | None, str]:
     if "}" in tag:
@@ -864,6 +1161,39 @@ def split_tag(tag: str) -> tuple[str | None, str]:
         prefix, local = tag.split(":", 1)
         return prefix, local
     return None, tag
+
+
+def parse_xbrl_contexts(root: ET.Element) -> dict[str, dict]:
+    contexts: dict[str, dict] = {}
+    for elem in root.iter():
+        _, local = split_tag(elem.tag)
+        if local != "context":
+            continue
+        ctx_id = elem.attrib.get("id")
+        if not ctx_id:
+            continue
+        start_date = None
+        end_date = None
+        instant = None
+        has_dimensions = False
+        for child in elem.iter():
+            _, c_local = split_tag(child.tag)
+            if c_local == "startDate":
+                start_date = (child.text or "").strip()
+            elif c_local == "endDate":
+                end_date = (child.text or "").strip()
+            elif c_local == "instant":
+                instant = (child.text or "").strip()
+            elif c_local in ["explicitMember", "typedMember"]:
+                has_dimensions = True
+        contexts[ctx_id] = {
+            "start_date": start_date,
+            "end_date": end_date,
+            "instant": instant,
+            "period_date": end_date or instant,
+            "has_dimensions": has_dimensions,
+        }
+    return contexts
 
 
 def is_maturity_concept_name(name: str) -> bool:
@@ -1147,24 +1477,7 @@ def parse_filing_maturity_rows(xbrl_text: str, fiscal_year: int, filing_date: st
     except Exception:
         return pd.DataFrame()
 
-    contexts: dict[str, dict] = {}
-    for elem in root.iter():
-        _, local = split_tag(elem.tag)
-        if local != "context":
-            continue
-        ctx_id = elem.attrib.get("id")
-        if not ctx_id:
-            continue
-        end_date = None
-        instant = None
-        for child in elem.iter():
-            _, c_local = split_tag(child.tag)
-            if c_local == "endDate":
-                end_date = (child.text or "").strip()
-            elif c_local == "instant":
-                instant = (child.text or "").strip()
-        period_date = end_date or instant
-        contexts[ctx_id] = {"period_date": period_date}
+    contexts = parse_xbrl_contexts(root)
 
     rows = []
     for elem in root.iter():
@@ -1176,7 +1489,10 @@ def parse_filing_maturity_rows(xbrl_text: str, fiscal_year: int, filing_date: st
         context_ref = elem.attrib.get("contextRef")
         if not context_ref or context_ref not in contexts:
             continue
-        period_date = contexts[context_ref].get("period_date")
+        ctx = contexts[context_ref]
+        if ctx["has_dimensions"]:
+            continue
+        period_date = ctx.get("period_date")
         if not period_date or not re.match(r"^\d{4}", str(period_date)):
             continue
         year = int(str(period_date)[:4])
@@ -1203,18 +1519,7 @@ def parse_filing_maturity_rows(xbrl_text: str, fiscal_year: int, filing_date: st
         return pd.DataFrame()
 
     df = pd.DataFrame(rows).drop_duplicates(subset=["tag", "amount", "end"])
-    df["include_in_sum"] = True
-    df["exclusion_reason"] = ""
-
-    detailed_present = any(df["concept"].isin(["year_2", "year_3", "year_4", "year_5"]))
-    if detailed_present:
-        agg_mask = df["concept"] == "years_2_to_5_agg"
-        df.loc[agg_mask, "include_in_sum"] = False
-        df.loc[agg_mask, "exclusion_reason"] = "Excluded because detailed Y2-Y5 exists"
-
-    df = df.sort_values(by=["concept", "item"], key=lambda c: c.map(lambda x: MATURITY_CONCEPT_ORDER.get(str(x), 99)) if c.name == "concept" else c)
-    return df.reset_index(drop=True)
-
+    return finalize_maturity_rows(df)
 
 def parse_filing_total_rows(xbrl_text: str, fiscal_year: int, filing_date: str) -> pd.DataFrame:
     try:
@@ -1223,24 +1528,7 @@ def parse_filing_total_rows(xbrl_text: str, fiscal_year: int, filing_date: str) 
         return pd.DataFrame()
 
     needed_tags = {t for tags in DEBT_TOTAL_TAGS.values() for t in tags}
-    contexts: dict[str, dict] = {}
-    for elem in root.iter():
-        _, local = split_tag(elem.tag)
-        if local != "context":
-            continue
-        ctx_id = elem.attrib.get("id")
-        if not ctx_id:
-            continue
-        end_date = None
-        instant = None
-        for child in elem.iter():
-            _, c_local = split_tag(child.tag)
-            if c_local == "endDate":
-                end_date = (child.text or "").strip()
-            elif c_local == "instant":
-                instant = (child.text or "").strip()
-        period_date = end_date or instant
-        contexts[ctx_id] = {"period_date": period_date}
+    contexts = parse_xbrl_contexts(root)
 
     rows = []
     for elem in root.iter():
@@ -1252,7 +1540,10 @@ def parse_filing_total_rows(xbrl_text: str, fiscal_year: int, filing_date: str) 
         context_ref = elem.attrib.get("contextRef")
         if not context_ref or context_ref not in contexts:
             continue
-        period_date = contexts[context_ref].get("period_date")
+        ctx = contexts[context_ref]
+        if ctx["has_dimensions"]:
+            continue
+        period_date = ctx.get("period_date")
         if not period_date or not re.match(r"^\d{4}", str(period_date)):
             continue
         year = int(str(period_date)[:4])
@@ -1288,34 +1579,7 @@ def parse_filing_flow_context_pairs(
     except Exception:
         return pd.DataFrame()
 
-    contexts: dict[str, dict] = {}
-    for elem in root.iter():
-        _, local = split_tag(elem.tag)
-        if local != "context":
-            continue
-        ctx_id = elem.attrib.get("id")
-        if not ctx_id:
-            continue
-        start_date = None
-        end_date = None
-        instant = None
-        has_dimensions = False
-        for child in elem.iter():
-            _, c_local = split_tag(child.tag)
-            if c_local == "startDate":
-                start_date = (child.text or "").strip()
-            elif c_local == "endDate":
-                end_date = (child.text or "").strip()
-            elif c_local == "instant":
-                instant = (child.text or "").strip()
-            elif c_local in ["explicitMember", "typedMember"]:
-                has_dimensions = True
-        contexts[ctx_id] = {
-            "start_date": start_date,
-            "end_date": end_date,
-            "instant": instant,
-            "has_dimensions": has_dimensions,
-        }
+    contexts = parse_xbrl_contexts(root)
 
     flow_rows = []
     flow_tags = {metric: tags for metric, tags in FACT_TAGS.items() if metric in FLOW_METRICS}
@@ -1645,7 +1909,9 @@ def status_style(check_status: str) -> tuple[str, str]:
 def tag_scope(tag: str | None) -> str | None:
     if not tag or pd.isna(tag):
         return None
-    return "debt+lease" if "FinanceLease" in str(tag) else "debt-only"
+    tag_text = str(tag)
+    lease_tokens = ["FinanceLease", "CapitalLease", "OperatingLease", "LeaseLiabilities"]
+    return "debt+lease" if any(token in tag_text for token in lease_tokens) else "debt-only"
 
 
 def calc_gap(total_debt: float | None, maturity_sum: float) -> tuple[float | None, float | None]:
@@ -1877,8 +2143,9 @@ def render_debt_distribution(ticker_options: list[str], ticker_map: pd.DataFrame
         for m in methods:
             m["score"] = m["gap_pct_value"] + m["penalty"]
         methods_df = pd.DataFrame(methods).sort_values("score", ascending=True)
-        chosen = methods_df.iloc[0].to_dict()
-        alt_method = methods_df.iloc[1].to_dict() if len(methods_df) > 1 else None
+        chosen = methods_df[methods_df["method"] == "baseline_schedule_only"].iloc[0].to_dict()
+        alt_candidates = methods_df[methods_df["method"] != "baseline_schedule_only"]
+        alt_method = alt_candidates.iloc[0].to_dict() if not alt_candidates.empty else None
 
         maturity_sum = float(chosen["maturity_sum"])
         gap = chosen["gap"]
@@ -1958,6 +2225,7 @@ def render_debt_distribution(ticker_options: list[str], ticker_map: pd.DataFrame
 
         # Block C: Reconciliation check (independent diagnostic)
         st.markdown("### C. Reconciliation Check")
+        st.caption("Primary check uses the company-reported maturity schedule; current-debt adjustment is kept as a supplementary diagnostic only.")
         quality = quality_label(gap_pct, maturity_items_used)
         if quality == "OK":
             check_status = "Passed"
@@ -2185,6 +2453,64 @@ def sec_sic_cache_status() -> dict[str, object]:
     return {"status": status, "modified": modified, "age_days": age_days}
 
 
+def distribution_cache_status() -> dict[str, object]:
+    if not DISTRIBUTION_CACHE_PATH.exists():
+        return {"status": "missing", "modified": None, "age_days": None}
+    modified = datetime.fromtimestamp(DISTRIBUTION_CACHE_PATH.stat().st_mtime)
+    age_days = (datetime.now() - modified).days
+    status = "fresh" if age_days <= 30 else "stale"
+    return {"status": status, "modified": modified, "age_days": age_days}
+
+
+@st.cache_data(ttl=3600)
+def load_distribution_cache() -> pd.DataFrame:
+    if not DISTRIBUTION_CACHE_PATH.exists():
+        return pd.DataFrame()
+    try:
+        df = pd.read_csv(DISTRIBUTION_CACHE_PATH, compression="gzip", parse_dates=["end", "filed"])
+    except Exception:
+        return pd.DataFrame()
+    return df
+
+
+def compute_concentration_metrics(values: pd.Series, top_n: int) -> dict[str, float | int | None]:
+    numeric = pd.to_numeric(values, errors="coerce").dropna()
+    positive = numeric[numeric > 0]
+    if positive.empty:
+        return {
+            "positive_company_count": 0,
+            "positive_total_value": None,
+            "top_n_share": None,
+            "hhi": None,
+        }
+
+    total_value = float(positive.sum())
+    shares = positive / total_value
+    top_share = float(positive.nlargest(min(top_n, len(positive))).sum() / total_value)
+    hhi = float((shares ** 2).sum())
+    return {
+        "positive_company_count": int(len(positive)),
+        "positive_total_value": total_value,
+        "top_n_share": top_share,
+        "hhi": hhi,
+    }
+
+
+def compute_distribution_percentiles(values: pd.Series) -> dict[str, float | None]:
+    numeric = pd.to_numeric(values, errors="coerce").dropna()
+    if numeric.empty:
+        return {
+            "p10": None,
+            "median": None,
+            "p90": None,
+        }
+    return {
+        "p10": float(numeric.quantile(0.10)),
+        "median": float(numeric.quantile(0.50)),
+        "p90": float(numeric.quantile(0.90)),
+    }
+
+
 def balance_check_status(gap_pct: float | None) -> str:
     if gap_pct is None or pd.isna(gap_pct):
         return "n/a"
@@ -2194,6 +2520,71 @@ def balance_check_status(gap_pct: float | None) -> str:
     if gap <= 0.05:
         return "Warning"
     return "Review"
+
+
+def build_missing_account_summary(snapshot_df: pd.DataFrame, metrics: list[str], entity_col: str = "ticker") -> pd.DataFrame:
+    if snapshot_df.empty:
+        return pd.DataFrame()
+
+    rows = []
+    entity_label = entity_col.replace("_", " ").title()
+    for _, row in snapshot_df.iterrows():
+        missing_accounts = [metric for metric in metrics if pd.isna(row.get(metric))]
+        if not missing_accounts:
+            continue
+        rows.append(
+            {
+                entity_label: row.get(entity_col),
+                "Reported accounts": len(metrics) - len(missing_accounts),
+                "Missing accounts": ", ".join(missing_accounts),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def build_time_series_coverage_summary(rows: pd.DataFrame, metrics: list[str]) -> pd.DataFrame:
+    if rows.empty:
+        return pd.DataFrame()
+
+    total_periods = rows[["fy", "fp", "end"]].drop_duplicates().shape[0]
+    if total_periods == 0:
+        return pd.DataFrame()
+
+    reported_counts = rows[["metric", "fy", "fp", "end"]].drop_duplicates().groupby("metric").size().to_dict()
+    coverage_rows = []
+    for metric in metrics:
+        reported = int(reported_counts.get(metric, 0))
+        coverage_rows.append(
+            {
+                "Account": metric,
+                "Reported periods": reported,
+                "Missing periods": max(total_periods - reported, 0),
+                "Coverage": f"{reported}/{total_periods}",
+            }
+        )
+    return pd.DataFrame(coverage_rows)
+
+
+def build_panel_coverage_summary(rows: pd.DataFrame, metrics: list[str]) -> pd.DataFrame:
+    if rows.empty:
+        return pd.DataFrame()
+
+    total_periods_by_ticker = rows[["ticker", "fy", "fp", "end"]].drop_duplicates().groupby("ticker").size().to_dict()
+    reported_counts = rows[["ticker", "metric", "fy", "fp", "end"]].drop_duplicates().groupby(["ticker", "metric"]).size().to_dict()
+    coverage_rows = []
+    for ticker, total_periods in total_periods_by_ticker.items():
+        for metric in metrics:
+            reported = int(reported_counts.get((ticker, metric), 0))
+            coverage_rows.append(
+                {
+                    "Ticker": ticker,
+                    "Account": metric,
+                    "Reported periods": reported,
+                    "Missing periods": max(int(total_periods) - reported, 0),
+                    "Coverage": f"{reported}/{int(total_periods)}",
+                }
+            )
+    return pd.DataFrame(coverage_rows)
 
 
 def render_cross_section_chart_block(
@@ -2238,6 +2629,7 @@ def render_cross_section_chart_block(
             .mark_bar()
             .encode(
                 x=alt.X("Account:N", sort=None, title=None),
+                xOffset=alt.XOffset("company_name:N", sort=None),
                 y=alt.Y("value_usd_mm:Q", title=f"Value ({USD_MM_LABEL})"),
                 color=alt.Color(
                     "company_name:N",
@@ -2264,7 +2656,12 @@ def render_cross_section_chart_block(
         st.bar_chart(fallback_chart)
 
 
-def select_cross_section_snapshots(data: pd.DataFrame, metrics: list[str], period_type: str) -> pd.DataFrame:
+def select_cross_section_snapshots(
+    data: pd.DataFrame,
+    metrics: list[str],
+    period_type: str,
+    account_mode: str = "Simplified Statements",
+) -> pd.DataFrame:
     if data.empty:
         return pd.DataFrame()
 
@@ -2297,6 +2694,14 @@ def select_cross_section_snapshots(data: pd.DataFrame, metrics: list[str], perio
     if value_snapshots.empty:
         return pd.DataFrame()
 
+    quality_rank_snapshots = best_rows.pivot(
+        index=CROSS_SECTION_KEY_COLS,
+        columns="metric",
+        values="quality_rank",
+    ).reset_index()
+    quality_rank_snapshots = quality_rank_snapshots.rename(
+        columns={metric: f"{metric} quality_rank" for metric in metrics if metric in quality_rank_snapshots.columns}
+    )
     tag_snapshots = best_rows.pivot(
         index=CROSS_SECTION_KEY_COLS,
         columns="metric",
@@ -2320,12 +2725,19 @@ def select_cross_section_snapshots(data: pd.DataFrame, metrics: list[str], perio
         columns={metric: f"{metric} source" for metric in metrics if metric in source_snapshots.columns}
     )
 
-    snapshots = value_snapshots.merge(tag_snapshots, on=CROSS_SECTION_KEY_COLS, how="left")
+    snapshots = value_snapshots.merge(quality_rank_snapshots, on=CROSS_SECTION_KEY_COLS, how="left")
+    snapshots = snapshots.merge(tag_snapshots, on=CROSS_SECTION_KEY_COLS, how="left")
     snapshots = snapshots.merge(quality_snapshots, on=CROSS_SECTION_KEY_COLS, how="left")
     snapshots = snapshots.merge(source_snapshots, on=CROSS_SECTION_KEY_COLS, how="left")
     metric_values = snapshots.reindex(columns=metrics)
     snapshots["available_metric_count"] = metric_values.notna().sum(axis=1)
     snapshots["has_all_selected_metrics"] = snapshots["available_metric_count"] == len(metrics)
+
+    quality_rank_cols = [f"{metric} quality_rank" for metric in metrics if f"{metric} quality_rank" in snapshots.columns]
+    if quality_rank_cols:
+        snapshots["snapshot_quality_score"] = snapshots[quality_rank_cols].fillna(3).sum(axis=1)
+    else:
+        snapshots["snapshot_quality_score"] = 0
 
     balance_values = snapshots.reindex(columns=["Assets", "Liabilities", "Equity"])
     snapshots["has_balance_triplet"] = balance_values.notna().all(axis=1)
@@ -2338,27 +2750,54 @@ def select_cross_section_snapshots(data: pd.DataFrame, metrics: list[str], perio
     snapshots["Current + Noncurrent Assets"] = asset_structure_values["Current Assets"] + asset_structure_values["Noncurrent Assets"]
     snapshots["Asset structure gap"] = asset_structure_values["Assets"] - snapshots["Current + Noncurrent Assets"]
     snapshots["Asset structure gap %"] = snapshots["Asset structure gap"] / asset_structure_values["Assets"].abs()
+    snapshots["asset_structure_gap_abs"] = snapshots["Asset structure gap"].abs().fillna(float("inf"))
+    liability_structure_values = snapshots.reindex(columns=["Liabilities", "Current Liabilities", "Noncurrent Liabilities"])
+    snapshots["has_liability_structure_triplet"] = liability_structure_values.notna().all(axis=1)
+    snapshots["Current + Noncurrent Liabilities"] = liability_structure_values["Current Liabilities"] + liability_structure_values["Noncurrent Liabilities"]
+    snapshots["Liability structure gap"] = liability_structure_values["Liabilities"] - snapshots["Current + Noncurrent Liabilities"]
+    snapshots["Liability structure gap %"] = snapshots["Liability structure gap"] / liability_structure_values["Liabilities"].abs()
+    snapshots["liability_structure_gap_abs"] = snapshots["Liability structure gap"].abs().fillna(float("inf"))
     flow_structure_values = snapshots.reindex(columns=["Revenue", "COGS", "Gross Profit"])
     snapshots["has_gross_profit_triplet"] = flow_structure_values.notna().all(axis=1)
     snapshots["Revenue - COGS"] = flow_structure_values["Revenue"] - flow_structure_values["COGS"]
     snapshots["Gross profit gap"] = flow_structure_values["Gross Profit"] - snapshots["Revenue - COGS"]
     snapshots["Gross profit gap %"] = snapshots["Gross profit gap"] / flow_structure_values["Revenue"].abs()
+    snapshots["gross_profit_gap_abs"] = snapshots["Gross profit gap"].abs().fillna(float("inf"))
     snapshots["flow_basis"] = "As reported"
     if use_ytd_for_flows:
         snapshots["flow_basis"] = "YTD"
 
-    ranked = snapshots.sort_values(
-        [
+    mode_spec = get_account_mode_spec(account_mode)
+    if mode_spec["enable_structure_checks"]:
+        sort_cols = [
             "ticker",
             "has_all_selected_metrics",
             "available_metric_count",
             "has_balance_triplet",
             "balance_gap_abs",
+            "has_liability_structure_triplet",
+            "liability_structure_gap_abs",
+            "has_asset_structure_triplet",
+            "asset_structure_gap_abs",
+            "has_gross_profit_triplet",
+            "gross_profit_gap_abs",
+            "snapshot_quality_score",
             "filed",
             "end",
-        ],
-        ascending=[True, False, False, False, True, False, False],
-    )
+        ]
+        ascending = [True, False, False, False, True, False, True, False, True, False, True, True, False, False]
+    else:
+        sort_cols = [
+            "ticker",
+            "has_all_selected_metrics",
+            "available_metric_count",
+            "snapshot_quality_score",
+            "filed",
+            "end",
+        ]
+        ascending = [True, False, False, True, False, False]
+
+    ranked = snapshots.sort_values(sort_cols, ascending=ascending)
     return ranked.drop_duplicates(subset=["ticker"], keep="first").reset_index(drop=True)
 
 
@@ -2481,13 +2920,138 @@ def apply_strict_flow_pair_to_long_rows(
     return out
 
 
+def select_aligned_long_rows(
+    data: pd.DataFrame,
+    metrics: list[str],
+    period_type: str,
+    entity_keys: list[str],
+    account_mode: str = "Simplified Statements",
+) -> pd.DataFrame:
+    if data.empty:
+        return pd.DataFrame()
+
+    work = data.dropna(subset=["fy", "end", "val"]).copy()
+    if work.empty:
+        return pd.DataFrame()
+
+    work["form"] = work["form"].fillna("")
+    work["quality_rank"] = work["quality_flag"].map(metric_quality_rank)
+    work["is_flow_metric"] = work["metric"].isin(FLOW_METRICS)
+    work["has_start"] = work["start"].notna()
+    work["period_length_days"] = (work["end"] - work["start"]).dt.days
+    work["period_length_days"] = work["period_length_days"].where(work["period_length_days"] >= 0)
+    work["flow_duration_priority"] = -1
+    if period_type.startswith("Quarterly"):
+        flow_mask = work["is_flow_metric"]
+        work.loc[flow_mask, "flow_duration_priority"] = work.loc[flow_mask, "period_length_days"].fillna(-1)
+
+    snapshot_key_cols = entity_keys + ["fy", "fp", "end", "filed", "form"]
+    entity_period_cols = entity_keys + ["fy", "fp", "end"]
+    work = work.sort_values(
+        entity_keys + ["fy", "fp", "end", "filed", "form", "metric", "has_start", "flow_duration_priority", "quality_rank", "tag_rank"],
+        ascending=([True] * len(entity_keys)) + [True, True, False, False, False, True, False, False, True, True],
+    )
+    best_rows = work.drop_duplicates(subset=snapshot_key_cols + ["metric"], keep="first")
+    if best_rows.empty:
+        return pd.DataFrame()
+
+    value_snapshots = best_rows.pivot(index=snapshot_key_cols, columns="metric", values="val").reset_index()
+    if value_snapshots.empty:
+        return pd.DataFrame()
+
+    quality_rank_snapshots = best_rows.pivot(index=snapshot_key_cols, columns="metric", values="quality_rank").reset_index()
+    quality_rank_snapshots = quality_rank_snapshots.rename(
+        columns={metric: f"{metric} quality_rank" for metric in metrics if metric in quality_rank_snapshots.columns}
+    )
+
+    snapshots = value_snapshots.merge(quality_rank_snapshots, on=snapshot_key_cols, how="left")
+    metric_values = snapshots.reindex(columns=metrics)
+    snapshots["available_metric_count"] = metric_values.notna().sum(axis=1)
+    snapshots["has_all_selected_metrics"] = snapshots["available_metric_count"] == len(metrics)
+
+    quality_rank_cols = [f"{metric} quality_rank" for metric in metrics if f"{metric} quality_rank" in snapshots.columns]
+    if quality_rank_cols:
+        snapshots["snapshot_quality_score"] = snapshots[quality_rank_cols].fillna(3).sum(axis=1)
+    else:
+        snapshots["snapshot_quality_score"] = 0
+
+    balance_values = snapshots.reindex(columns=["Assets", "Liabilities", "Equity"])
+    snapshots["has_balance_triplet"] = balance_values.notna().all(axis=1)
+    snapshots["Liabilities + Equity"] = balance_values["Liabilities"] + balance_values["Equity"]
+    snapshots["Balance gap"] = balance_values["Assets"] - snapshots["Liabilities + Equity"]
+    snapshots["Balance gap %"] = snapshots["Balance gap"] / balance_values["Assets"].abs()
+    snapshots["balance_gap_abs"] = snapshots["Balance gap"].abs().fillna(float("inf"))
+
+    asset_structure_values = snapshots.reindex(columns=["Assets", "Current Assets", "Noncurrent Assets"])
+    snapshots["has_asset_structure_triplet"] = asset_structure_values.notna().all(axis=1)
+    snapshots["Current + Noncurrent Assets"] = asset_structure_values["Current Assets"] + asset_structure_values["Noncurrent Assets"]
+    snapshots["Asset structure gap"] = asset_structure_values["Assets"] - snapshots["Current + Noncurrent Assets"]
+    snapshots["asset_structure_gap_abs"] = snapshots["Asset structure gap"].abs().fillna(float("inf"))
+
+    liability_structure_values = snapshots.reindex(columns=["Liabilities", "Current Liabilities", "Noncurrent Liabilities"])
+    snapshots["has_liability_structure_triplet"] = liability_structure_values.notna().all(axis=1)
+    snapshots["Current + Noncurrent Liabilities"] = liability_structure_values["Current Liabilities"] + liability_structure_values["Noncurrent Liabilities"]
+    snapshots["Liability structure gap"] = liability_structure_values["Liabilities"] - snapshots["Current + Noncurrent Liabilities"]
+    snapshots["liability_structure_gap_abs"] = snapshots["Liability structure gap"].abs().fillna(float("inf"))
+
+    flow_structure_values = snapshots.reindex(columns=["Revenue", "COGS", "Gross Profit"])
+    snapshots["has_gross_profit_triplet"] = flow_structure_values.notna().all(axis=1)
+    snapshots["Revenue - COGS"] = flow_structure_values["Revenue"] - flow_structure_values["COGS"]
+    snapshots["Gross profit gap"] = flow_structure_values["Gross Profit"] - snapshots["Revenue - COGS"]
+    snapshots["gross_profit_gap_abs"] = snapshots["Gross profit gap"].abs().fillna(float("inf"))
+
+    mode_spec = get_account_mode_spec(account_mode)
+    if mode_spec["enable_structure_checks"]:
+        sort_cols = entity_period_cols + [
+            "has_all_selected_metrics",
+            "available_metric_count",
+            "has_balance_triplet",
+            "balance_gap_abs",
+            "has_liability_structure_triplet",
+            "liability_structure_gap_abs",
+            "has_asset_structure_triplet",
+            "asset_structure_gap_abs",
+            "has_gross_profit_triplet",
+            "gross_profit_gap_abs",
+            "snapshot_quality_score",
+            "filed",
+            "form",
+        ]
+        ascending = ([True] * len(entity_period_cols)) + [False, False, False, True, False, True, False, True, False, True, True, False, False]
+    else:
+        sort_cols = entity_period_cols + [
+            "has_all_selected_metrics",
+            "available_metric_count",
+            "snapshot_quality_score",
+            "filed",
+            "form",
+        ]
+        ascending = ([True] * len(entity_period_cols)) + [False, False, True, False, False]
+
+    ranked = snapshots.sort_values(sort_cols, ascending=ascending)
+    chosen_snapshots = ranked.drop_duplicates(subset=entity_period_cols, keep="first")
+
+    snapshot_meta = chosen_snapshots[snapshot_key_cols + ["available_metric_count", "has_all_selected_metrics"]].rename(
+        columns={
+            "available_metric_count": "aligned_snapshot_metric_count",
+            "has_all_selected_metrics": "aligned_snapshot_has_all_selected_metrics",
+        }
+    )
+    selected_rows = best_rows.merge(snapshot_meta, on=snapshot_key_cols, how="inner")
+    selected_rows = selected_rows[selected_rows["metric"].isin(metrics)].copy()
+    return selected_rows.reset_index(drop=True)
+
 def render_cross_section(ticker_options: list[str], ticker_map: pd.DataFrame, user_agent: str) -> None:
     st.subheader("Cross-Section")
     st.caption("Select one year or quarter and compare multiple companies across selected accounts.")
     st.caption(f"Units: {USD_MM_LABEL}")
+    account_mode = render_account_mode_selector("cs_account_mode")
+    mode_spec = get_account_mode_spec(account_mode)
+    st.caption(mode_spec["catalog_caption"])
+    st.caption(mode_spec["coverage_caption"])
     st.caption(
-        f"Account catalog: {len(BALANCE_SHEET_ACCOUNTS)} simplified balance-sheet accounts and "
-        f"{len(INCOME_STATEMENT_ACCOUNTS)} income-statement accounts. Exports keep the SEC XBRL tag, source type, and quality flag used."
+        f"Selected catalog: {len(mode_spec['balance_accounts'])} balance-sheet accounts and "
+        f"{len(mode_spec['income_accounts'])} income-statement accounts. Exports keep the SEC XBRL tag, source type, and quality flag used."
     )
     name_map = dict(zip(ticker_map["ticker"], ticker_map["title"]))
 
@@ -2498,7 +3062,7 @@ def render_cross_section(ticker_options: list[str], ticker_map: pd.DataFrame, us
         format_func=lambda t: ticker_display_label(str(t), name_map),
         key="cs_companies",
     )
-    metrics = render_account_selector(CORE_ACCOUNT_DEFAULTS, "cs")
+    metrics = render_account_selector(CORE_ACCOUNT_DEFAULTS, "cs", account_mode)
     period_type = st.selectbox("Period type", ["Annual (FY)", "Quarterly (Q1-Q4)"], key="cs_period_type")
 
     if not companies:
@@ -2553,10 +3117,17 @@ def render_cross_section(ticker_options: list[str], ticker_map: pd.DataFrame, us
         st.error("No rows found for that period.")
         return
 
-    selected_snapshots = select_cross_section_snapshots(filtered, metrics, period_type)
+    selected_snapshots = select_cross_section_snapshots(filtered, metrics, period_type, account_mode=account_mode)
     if selected_snapshots.empty:
         st.error("No aligned filing snapshot found for the selected period.")
         return
+
+    missing_companies = sorted(set(companies) - set(selected_snapshots["ticker"].astype(str).tolist()))
+    if missing_companies:
+        st.warning(
+            "No aligned snapshot was available for the selected period and accounts for: " + ", ".join(missing_companies)
+        )
+
     selected_snapshots = apply_strict_flow_pair_overrides(
         selected_snapshots,
         ticker_map=ticker_map,
@@ -2668,12 +3239,22 @@ def render_cross_section(ticker_options: list[str], ticker_map: pd.DataFrame, us
         incomplete["note"] = incomplete["available_metric_count"].map(
             lambda n: f"{int(n)}/{len(metrics)} selected accounts available in one aligned filing snapshot"
         )
-        st.warning(
-            "Some companies do not have all selected accounts in a single aligned filing snapshot for this period."
-        )
+        if mode_spec["enable_structure_checks"]:
+            st.warning(
+                "Some companies do not have all selected accounts in a single aligned filing snapshot for this period."
+            )
+        else:
+            st.warning(
+                "Some companies report only part of the selected specific-account set in one aligned filing snapshot for this period."
+            )
         st.dataframe(incomplete[["ticker", "note"]], use_container_width=True, hide_index=True)
 
-    st.caption("Source alignment: one filing snapshot per company, matched by fiscal period, end date, filing date, and form. Segmented facts are excluded.")
+    if mode_spec["enable_structure_checks"]:
+        st.caption("Source alignment: one filing snapshot per company, matched by fiscal period, end date, filing date, and form. Segmented facts are excluded.")
+    else:
+        st.caption(
+            "Source alignment: one filing snapshot per company, matched by fiscal period, end date, filing date, and form. Segmented facts are excluded, but statement-closing diagnostics are relaxed in this mode."
+        )
     snapshot_meta_cols = ["ticker", "end", "filed", "form", "available_metric_count"]
     if period_type.startswith("Quarterly") and any(metric in FLOW_METRICS for metric in metrics):
         snapshot_meta_cols.append("flow_basis")
@@ -2711,6 +3292,14 @@ def render_cross_section(ticker_options: list[str], ticker_map: pd.DataFrame, us
         st.caption("Account traceability (visible source tags, direct/derived source type, and quality flags for the selected snapshot).")
         st.dataframe(pd.DataFrame(traceability_rows), use_container_width=True, hide_index=True)
 
+    if not mode_spec["enable_structure_checks"]:
+        coverage_summary = build_missing_account_summary(selected_snapshots, metrics)
+        if not coverage_summary.empty:
+            st.caption("Specific-account coverage by company for the selected snapshot.")
+            st.dataframe(coverage_summary, use_container_width=True, hide_index=True)
+        else:
+            st.caption("All selected companies reported all selected specific accounts in the chosen snapshot.")
+
     badge_specs = {
         "Passed": ("#1b5e20", "#e8f5e9"),
         "Warning": ("#8a6d1f", "#fff8e1"),
@@ -2718,7 +3307,7 @@ def render_cross_section(ticker_options: list[str], ticker_map: pd.DataFrame, us
     }
 
     has_balance_inputs = all(col in pivot_usd.columns for col in ["Assets", "Liabilities", "Equity"])
-    if has_balance_inputs:
+    if mode_spec["enable_structure_checks"] and has_balance_inputs:
         balance_df = selected_snapshots[
             ["ticker", "Assets", "Liabilities", "Equity", "Liabilities + Equity", "Balance gap", "Balance gap %"]
         ].copy()
@@ -2764,7 +3353,7 @@ def render_cross_section(ticker_options: list[str], ticker_map: pd.DataFrame, us
             st.dataframe(balance_display, use_container_width=True, hide_index=True)
 
     has_asset_structure_inputs = all(col in pivot_usd.columns for col in ["Assets", "Current Assets", "Noncurrent Assets"])
-    if has_asset_structure_inputs:
+    if mode_spec["enable_structure_checks"] and has_asset_structure_inputs:
         asset_df = selected_snapshots[
             [
                 "ticker",
@@ -2820,8 +3409,65 @@ def render_cross_section(ticker_options: list[str], ticker_map: pd.DataFrame, us
             )
             st.dataframe(asset_display, use_container_width=True, hide_index=True)
 
+    has_liability_structure_inputs = all(col in pivot_usd.columns for col in ["Liabilities", "Current Liabilities", "Noncurrent Liabilities"])
+    if mode_spec["enable_structure_checks"] and has_liability_structure_inputs:
+        liability_df = selected_snapshots[
+            [
+                "ticker",
+                "Liabilities",
+                "Current Liabilities",
+                "Noncurrent Liabilities",
+                "Current + Noncurrent Liabilities",
+                "Liability structure gap",
+                "Liability structure gap %",
+            ]
+        ].copy()
+        liability_df["Liability structure check"] = liability_df["Liability structure gap %"].map(balance_check_status)
+        liability_display = liability_df.copy()
+        for col in [
+            "Liabilities",
+            "Current Liabilities",
+            "Noncurrent Liabilities",
+            "Current + Noncurrent Liabilities",
+            "Liability structure gap",
+        ]:
+            liability_display[col] = liability_display[col] / USD_MM_DIVISOR
+        liability_display["Liability structure gap %"] = liability_display["Liability structure gap %"].map(
+            lambda x: "n/a" if pd.isna(x) else f"{float(x):.2%}"
+        )
+        liability_display = liability_display.rename(
+            columns={
+                "Liabilities": "Liabilities (USD mm)",
+                "Current Liabilities": "Current Liabilities (USD mm)",
+                "Noncurrent Liabilities": "Noncurrent Liabilities (USD mm)",
+                "Current + Noncurrent Liabilities": "Current + Noncurrent Liabilities (USD mm)",
+                "Liability structure gap": "Liability structure gap (USD mm)",
+            }
+        )
+        liability_status_counts = liability_df["Liability structure check"].value_counts().to_dict()
+        st.caption(
+            "Liability structure check (Current Liabilities + Noncurrent Liabilities = Liabilities): "
+            f"Passed {liability_status_counts.get('Passed', 0)} | "
+            f"Warning {liability_status_counts.get('Warning', 0)} | "
+            f"Review {liability_status_counts.get('Review', 0)}"
+        )
+        liability_badges = []
+        for label in ["Passed", "Warning", "Review"]:
+            if liability_status_counts.get(label, 0) > 0:
+                fg, bg = badge_specs[label]
+                liability_badges.append(
+                    f"<span style='color:{fg};background:{bg};padding:0.15rem 0.4rem;border-radius:0.35rem;font-weight:700;'>{label}</span>"
+                )
+        if liability_badges:
+            st.markdown(" ".join(liability_badges), unsafe_allow_html=True)
+        with st.expander("Show liability structure diagnostics"):
+            st.caption(
+                "Diagnostic only: `Long-Term Debt` is a financing subcomponent, not a substitute for `Noncurrent Liabilities`."
+            )
+            st.dataframe(liability_display, use_container_width=True, hide_index=True)
+
     has_gross_profit_inputs = all(col in pivot_usd.columns for col in ["Revenue", "COGS", "Gross Profit"])
-    if has_gross_profit_inputs:
+    if mode_spec["enable_structure_checks"] and has_gross_profit_inputs:
         gross_profit_df = selected_snapshots[
             ["ticker", "Revenue", "COGS", "Gross Profit", "Revenue - COGS", "Gross profit gap", "Gross profit gap %"]
         ].copy()
@@ -2864,7 +3510,8 @@ def render_cross_section(ticker_options: list[str], ticker_map: pd.DataFrame, us
             st.dataframe(gross_profit_display, use_container_width=True, hide_index=True)
 
     pivot_csv = selected_snapshots[["ticker", "fy", "fp", "end", "filed", "form"]].copy()
-    pivot_csv.insert(1, "period_label", selected_snapshots.apply(lambda r: format_period_label(r["fy"], r["fp"]), axis=1))
+    pivot_csv.insert(1, "account_mode", account_mode)
+    pivot_csv.insert(2, "period_label", selected_snapshots.apply(lambda r: format_period_label(r["fy"], r["fp"]), axis=1))
     if period_type.startswith("Quarterly") and any(metric in FLOW_METRICS for metric in metrics):
         pivot_csv["flow_basis"] = selected_snapshots["flow_basis"]
     if {"Revenue", "Net Income"}.issubset(set(metrics)) and "flow_context_source" in selected_snapshots.columns:
@@ -2888,7 +3535,7 @@ def render_cross_section(ticker_options: list[str], ticker_map: pd.DataFrame, us
             pivot_csv[source_col] = selected_snapshots[source_col]
     for col in metric_cols:
         pivot_csv[f"{col}_usd_mm"] = pivot_csv[col] / USD_MM_DIVISOR
-    if has_balance_inputs:
+    if mode_spec["enable_structure_checks"] and has_balance_inputs:
         pivot_csv["liabilities_plus_equity_usd"] = selected_snapshots["Liabilities + Equity"]
         pivot_csv["balance_gap_usd"] = selected_snapshots["Balance gap"]
         pivot_csv["balance_gap_pct"] = selected_snapshots["Balance gap %"]
@@ -2900,15 +3547,212 @@ def render_cross_section(ticker_options: list[str], ticker_map: pd.DataFrame, us
     )
 
 
+
+def render_account_distribution(ticker_map: pd.DataFrame, selection_mode: str) -> None:
+    st.subheader("Account Distribution")
+    st.caption("Pick one simplified account and inspect its cross-sectional distribution across the current issuer universe.")
+    st.caption(f"Units: {USD_MM_LABEL}")
+    st.caption(
+        "This first version uses a persisted annual Simplified Statements cache. "
+        "It is designed for universe-wide ranking, coverage, and concentration analysis."
+    )
+
+    cache_state = distribution_cache_status()
+    if cache_state["status"] == "missing":
+        st.error(
+            "The local distribution cache (distribution_cache.csv.gz) is missing, so account-distribution analysis is unavailable right now."
+        )
+        st.info(
+            "Build it with python build_distribution_cache.py locally or let the GitHub workflow generate it after push."
+        )
+        return
+    if cache_state["status"] == "stale":
+        st.warning(
+            f"Distribution cache is stale ({cache_state['age_days']} days old). The module still works, but the universe may be outdated."
+        )
+
+    cache_df = load_distribution_cache()
+    if cache_df.empty:
+        st.error("The distribution cache exists but could not be loaded.")
+        return
+
+    comparison_ticker_map = ticker_map.copy()
+    scope_caption = "the current industry-filtered issuer universe"
+    if selection_mode == "By company":
+        operating_ticker_map = filter_operating_company_ticker_map(ticker_map)
+        if not operating_ticker_map.empty:
+            comparison_ticker_map = operating_ticker_map.copy()
+            scope_caption = "the SEC SIC operating-company universe used by industry mode"
+            st.caption("By-company distribution uses the same SEC SIC operating-company universe as industry mode.")
+        else:
+            scope_caption = "all tickers in the current issuer universe"
+            st.caption("SEC SIC metadata was not available, so the distribution universe falls back to the raw ticker universe.")
+
+    universe_tickers = set(comparison_ticker_map["ticker"].astype(str).tolist())
+    cache_df = cache_df[cache_df["ticker"].isin(universe_tickers)].copy()
+    if cache_df.empty:
+        st.error("No cached distribution rows match the current issuer universe.")
+        return
+
+    available_metrics = [metric for metric in SIMPLIFIED_ACCOUNT_OPTIONS if metric in cache_df["metric"].astype(str).unique().tolist()]
+    if not available_metrics:
+        st.error("No simplified accounts are available in the current distribution cache.")
+        return
+
+    years = sorted(cache_df["fy"].dropna().astype(int).unique().tolist(), reverse=True)
+    if not years:
+        st.error("The distribution cache does not contain fiscal years.")
+        return
+
+    metric = st.selectbox("Account", available_metrics, key="dist_metric")
+    selected_year = st.selectbox("Fiscal year", years, index=0, key="dist_year")
+    top_n = st.slider("Top / bottom tickers", 5, 25, 10, key="dist_top_n")
+
+    year_df = cache_df[cache_df["fy"] == selected_year].copy()
+    eligible_ticker_count = year_df["ticker"].nunique()
+    total_universe_ticker_count = len(universe_tickers)
+
+    filtered = year_df[year_df["metric"] == metric].copy()
+    filtered = filtered.sort_values("value_usd_raw", ascending=False)
+    reported_ticker_count = filtered["ticker"].nunique()
+    coverage_pct = (reported_ticker_count / eligible_ticker_count) if eligible_ticker_count else 0.0
+    eligible_share_pct = (eligible_ticker_count / total_universe_ticker_count) if total_universe_ticker_count else 0.0
+
+    st.caption(
+        f"Universe scope: {scope_caption}. {reported_ticker_count:,} of {eligible_ticker_count:,} cache-eligible tickers report {metric} for FY {selected_year}. "
+        f"The broader comparison universe contains {total_universe_ticker_count:,} tickers."
+    )
+
+    if filtered.empty:
+        st.error("No tickers in the current universe report that account for the selected fiscal year.")
+        return
+
+    if eligible_ticker_count > reported_ticker_count:
+        st.caption(
+            f"{eligible_ticker_count - reported_ticker_count:,} cache-eligible tickers have some FY {selected_year} simplified-statement data but no {metric} row."
+        )
+
+    percentiles = compute_distribution_percentiles(filtered["value_usd_raw"])
+    concentration = compute_concentration_metrics(filtered["value_usd_raw"], top_n=top_n)
+
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Tickers in universe", f"{total_universe_ticker_count:,}")
+    col2.metric(f"FY {selected_year} cache-eligible", f"{eligible_ticker_count:,}")
+    col3.metric("Tickers reporting", f"{reported_ticker_count:,}")
+    col4.metric("Coverage in eligible set", f"{coverage_pct:.1%}")
+
+    col5, col6, col7, col8, col9, col10 = st.columns(6)
+    col5.metric("Eligible share of universe", f"{eligible_share_pct:.1%}")
+    col6.metric("P10 (USD mm)", format_usd_mm(percentiles["p10"]))
+    col7.metric("Median (USD mm)", format_usd_mm(percentiles["median"]))
+    col8.metric("P90 (USD mm)", format_usd_mm(percentiles["p90"]))
+    col9.metric(
+        f"Top {top_n} share",
+        "n/a" if concentration["top_n_share"] is None else f"{concentration['top_n_share']:.1%}",
+    )
+    col10.metric(
+        "HHI (0-10,000)",
+        "n/a" if concentration["hhi"] is None else f"{concentration['hhi'] * 10000:,.0f}",
+    )
+
+    nonpositive_count = int(pd.to_numeric(filtered["value_usd_raw"], errors="coerce").fillna(0).le(0).sum())
+    if nonpositive_count > 0:
+        st.caption(
+            "Concentration metrics use only positive values. Tickers with zero or negative values remain visible in the tables but are excluded from concentration shares and HHI."
+        )
+
+    try:
+        import altair as alt
+
+        ranked = filtered.sort_values("value_usd_raw", ascending=True).reset_index(drop=True)
+        ranked["rank"] = ranked.index + 1
+        positive_values = pd.to_numeric(ranked["value_usd_raw"], errors="coerce").dropna()
+        use_log_scale = bool((positive_values > 0).all() and not positive_values.empty)
+        y_scale = alt.Scale(type="log") if use_log_scale else alt.Scale(zero=False)
+        y_title = f"Value ({USD_MM_LABEL})"
+        if use_log_scale:
+            y_title += " [log scale]"
+
+        tooltip_fields = [
+            alt.Tooltip("ticker:N", title="Ticker"),
+            alt.Tooltip("company_title:N", title="Company"),
+            alt.Tooltip("value_usd_mm:Q", title=f"Value ({USD_MM_LABEL})", format=",.2f"),
+            alt.Tooltip("rank:Q", title="Rank"),
+            alt.Tooltip("filed:T", title="Filed"),
+        ]
+        if "industry_group" in ranked.columns:
+            tooltip_fields.insert(2, alt.Tooltip("industry_group:N", title="Industry"))
+
+        rank_chart = (
+            alt.Chart(ranked)
+            .mark_circle(size=42, opacity=0.55)
+            .encode(
+                x=alt.X("rank:Q", title="Ticker rank (smallest to largest value)"),
+                y=alt.Y("value_usd_mm:Q", title=y_title, scale=y_scale),
+                tooltip=tooltip_fields,
+            )
+        )
+        st.caption("Ranked value view: each point is one ticker, sorted from the smallest to the largest reported value.")
+        st.altair_chart(rank_chart, use_container_width=True)
+
+        with st.expander("Histogram (bin counts)"):
+            histogram = (
+                alt.Chart(filtered)
+                .mark_bar()
+                .encode(
+                    x=alt.X("value_usd_mm:Q", bin=alt.Bin(maxbins=30), title=f"Value ({USD_MM_LABEL})"),
+                    y=alt.Y("count():Q", title="Tickers"),
+                    tooltip=[alt.Tooltip("count():Q", title="Tickers")],
+                )
+            )
+            st.altair_chart(histogram, use_container_width=True)
+    except ImportError:
+        st.caption("Chart fallback: ltair is unavailable, so the distribution charts are hidden.")
+
+    display_cols = ["ticker", "company_title", "value_usd_mm", "tag", "source_type", "quality_flag", "filed"]
+    if "industry_group" in filtered.columns:
+        display_cols.insert(2, "industry_group")
+
+    top_df = filtered.nlargest(min(top_n, len(filtered)), "value_usd_raw")[display_cols].copy()
+    bottom_df = filtered.nsmallest(min(top_n, len(filtered)), "value_usd_raw")[display_cols].copy()
+    rename_map = {
+        "ticker": "Ticker",
+        "company_title": "Company",
+        "industry_group": "Industry",
+        "value_usd_mm": "Value (USD mm)",
+        "tag": "Source tag",
+        "source_type": "Source type",
+        "quality_flag": "Quality flag",
+        "filed": "Filed",
+    }
+
+    top_df = top_df.rename(columns=rename_map)
+    bottom_df = bottom_df.rename(columns=rename_map)
+    st.markdown(f"**Top {min(top_n, len(filtered))}**")
+    st.dataframe(top_df, use_container_width=True, hide_index=True)
+    st.markdown(f"**Bottom {min(top_n, len(filtered))}**")
+    st.dataframe(bottom_df, use_container_width=True, hide_index=True)
+
+    export_df = filtered.copy()
+    st.download_button(
+        "Download distribution CSV",
+        export_df.to_csv(index=False),
+        file_name=f"account_distribution_{metric.replace(' ', '_').lower()}_{selected_year}.csv",
+        mime="text/csv",
+    )
 def render_time_series(ticker_options: list[str], ticker_map: pd.DataFrame, user_agent: str) -> None:
     st.subheader("Time Series")
     st.caption("Select one company and track selected accounts through time.")
     st.caption(f"Units: {USD_MM_LABEL}")
+    account_mode = render_account_mode_selector("ts_account_mode")
+    mode_spec = get_account_mode_spec(account_mode)
+    st.caption(mode_spec["catalog_caption"])
+    st.caption(mode_spec["coverage_caption"])
     name_map = dict(zip(ticker_map["ticker"], ticker_map["title"]))
 
     ticker = render_optional_company_select(ticker_options, name_map, "ts_ticker")
-    metrics = render_account_selector(TIME_SERIES_DEFAULTS, "ts")
-    st.caption("Select from the simplified SEC XBRL account catalog; tables keep the actual source tag, source type, and quality flag.")
+    metrics = render_account_selector(TIME_SERIES_DEFAULTS, "ts", account_mode)
+    st.caption("Tables keep the actual source tag, source type, and quality flag used for each period.")
     freq = st.selectbox("Frequency", ["Quarterly", "Annual"], key="ts_freq")
 
     if st.button("Run Time Series", key="run_ts"):
@@ -2953,11 +3797,18 @@ def render_time_series(ticker_options: list[str], ticker_map: pd.DataFrame, user
             st.error("No rows left after year filter.")
             return
 
-        data["quality_rank"] = data["quality_flag"].map(metric_quality_rank)
-        data = data.sort_values(["end", "metric", "filed", "quality_rank", "tag_rank"], ascending=[True, True, False, True, True])
-        latest = data.drop_duplicates(subset=["end", "metric"], keep="first").copy()
+        period_type_label = "Annual (FY)" if freq == "Annual" else "Quarterly (Q1-Q4)"
+        latest = select_aligned_long_rows(
+            data,
+            metrics=metrics,
+            period_type=period_type_label,
+            entity_keys=[],
+            account_mode=account_mode,
+        )
+        if latest.empty:
+            st.error("No aligned period snapshots were found for the selected accounts.")
+            return
         if {"Revenue", "Net Income"}.issubset(set(metrics)):
-            period_type_label = "Annual (FY)" if freq == "Annual" else "Quarterly (Q1-Q4)"
             latest = apply_strict_flow_pair_to_long_rows(
                 latest,
                 ticker=ticker,
@@ -2965,6 +3816,22 @@ def render_time_series(ticker_options: list[str], ticker_map: pd.DataFrame, user
                 user_agent=user_agent,
                 period_type=period_type_label,
             )
+
+        incomplete_periods = latest.loc[
+            ~latest["aligned_snapshot_has_all_selected_metrics"],
+            ["fy", "fp", "end"],
+        ].drop_duplicates()
+        if not incomplete_periods.empty:
+            if mode_spec["enable_structure_checks"]:
+                st.warning(
+                    "Some periods do not contain all selected accounts in one aligned snapshot. "
+                    "Those metrics are left missing instead of mixing values across different filings."
+                )
+            else:
+                st.warning(
+                    "Some periods report only part of the selected specific-account set in one aligned snapshot. "
+                    "Those metrics are left missing instead of mixing values across different filings."
+                )
 
         latest["val_usd_mm"] = latest["val"] / USD_MM_DIVISOR
         chart_df = latest.pivot(index="end", columns="metric", values="val_usd_mm").sort_index()
@@ -2985,7 +3852,22 @@ def render_time_series(ticker_options: list[str], ticker_map: pd.DataFrame, user
                     "Some periods could not be paired from the same filing XBRL context for `Revenue` and `Net Income`; those periods use the aligned companyfacts rows."
                 )
 
-        out_cols = ["ticker", "metric", "fy", "fp", "end", "val", "val_usd_mm", "tag", "source_type", "quality_flag", "form", "filed"]
+        out_cols = [
+            "ticker",
+            "metric",
+            "fy",
+            "fp",
+            "end",
+            "val",
+            "val_usd_mm",
+            "tag",
+            "source_type",
+            "quality_flag",
+            "form",
+            "filed",
+            "aligned_snapshot_metric_count",
+            "aligned_snapshot_has_all_selected_metrics",
+        ]
         if "flow_context_source" in latest.columns:
             out_cols.extend(["flow_context_source", "flow_context_ref", "flow_filing_accession"])
         out = latest[out_cols].sort_values("end")
@@ -3017,7 +3899,8 @@ def render_time_series(ticker_options: list[str], ticker_map: pd.DataFrame, user
                 axis=1,
             )
         out_display = out.rename(columns={"val_usd_mm": "value_usd_mm", "val": "value_usd_raw"})
-        out_display.insert(4, "period_label", out_display.apply(lambda r: format_period_label(r["fy"], r["fp"]), axis=1))
+        out_display.insert(1, "account_mode", account_mode)
+        out_display.insert(5, "period_label", out_display.apply(lambda r: format_period_label(r["fy"], r["fp"]), axis=1))
         ts_link_cols = [c for c in ["primary_filing_link", "flow_filing_link"] if c in out_display.columns]
         st.dataframe(
             out_display,
@@ -3025,6 +3908,11 @@ def render_time_series(ticker_options: list[str], ticker_map: pd.DataFrame, user
             hide_index=True,
             column_config=build_link_column_config(ts_link_cols) if ts_link_cols else None,
         )
+        if not mode_spec["enable_structure_checks"]:
+            coverage_summary = build_time_series_coverage_summary(latest, metrics)
+            if not coverage_summary.empty:
+                st.caption("Specific-account coverage across the selected periods.")
+                st.dataframe(coverage_summary, use_container_width=True, hide_index=True)
         st.download_button(
             "Download time-series CSV",
             out_display.to_csv(index=False),
@@ -3037,6 +3925,10 @@ def render_panel(ticker_options: list[str], ticker_map: pd.DataFrame, user_agent
     st.subheader("Panel")
     st.caption("Combine multiple companies over time in a long panel dataset.")
     st.caption(f"Units: {USD_MM_LABEL}")
+    account_mode = render_account_mode_selector("panel_account_mode")
+    mode_spec = get_account_mode_spec(account_mode)
+    st.caption(mode_spec["catalog_caption"])
+    st.caption(mode_spec["coverage_caption"])
     name_map = dict(zip(ticker_map["ticker"], ticker_map["title"]))
 
     companies = st.multiselect(
@@ -3046,8 +3938,8 @@ def render_panel(ticker_options: list[str], ticker_map: pd.DataFrame, user_agent
         format_func=lambda t: ticker_display_label(str(t), name_map),
         key="panel_companies",
     )
-    metrics = render_account_selector(PANEL_DEFAULTS, "panel")
-    st.caption("Select from the simplified SEC XBRL account catalog; exported rows keep the actual source tag, source type, and quality flag.")
+    metrics = render_account_selector(PANEL_DEFAULTS, "panel", account_mode)
+    st.caption("Exported rows keep the actual source tag, source type, and quality flag used for each company-period.")
     freq = st.selectbox("Frequency", ["Quarterly", "Annual"], key="panel_freq")
 
     if st.button("Run Panel", key="run_panel"):
@@ -3086,14 +3978,25 @@ def render_panel(ticker_options: list[str], ticker_map: pd.DataFrame, user_agent
             st.error("No rows left after year filter.")
             return
 
-        data["quality_rank"] = data["quality_flag"].map(metric_quality_rank)
-        data = data.sort_values(
-            ["ticker", "metric", "end", "filed", "quality_rank", "tag_rank"],
-            ascending=[True, True, True, False, True, True],
+        period_type_label = "Annual (FY)" if freq == "Annual" else "Quarterly (Q1-Q4)"
+        latest = select_aligned_long_rows(
+            data,
+            metrics=metrics,
+            period_type=period_type_label,
+            entity_keys=["ticker"],
+            account_mode=account_mode,
         )
-        latest = data.drop_duplicates(subset=["ticker", "metric", "end"], keep="first").copy()
+        if latest.empty:
+            st.error("No aligned company-period snapshots were found for the selected accounts.")
+            return
+
+        missing_companies = sorted(set(companies) - set(latest["ticker"].astype(str).tolist()))
+        if missing_companies:
+            st.warning(
+                "No aligned company-period observations were available for: " + ", ".join(missing_companies)
+            )
+
         if {"Revenue", "Net Income"}.issubset(set(metrics)):
-            period_type_label = "Annual (FY)" if freq == "Annual" else "Quarterly (Q1-Q4)"
             updated_frames = []
             for company in companies:
                 company_rows = latest[latest["ticker"] == company].copy()
@@ -3110,6 +4013,22 @@ def render_panel(ticker_options: list[str], ticker_map: pd.DataFrame, user_agent
             if updated_frames:
                 latest = pd.concat(updated_frames, ignore_index=True)
 
+        incomplete_company_periods = latest.loc[
+            ~latest["aligned_snapshot_has_all_selected_metrics"],
+            ["ticker", "fy", "fp", "end"],
+        ].drop_duplicates()
+        if not incomplete_company_periods.empty:
+            if mode_spec["enable_structure_checks"]:
+                st.warning(
+                    "Some company-period observations do not contain all selected accounts in one aligned snapshot. "
+                    "Those metrics are left missing instead of mixing values across different filings."
+                )
+            else:
+                st.warning(
+                    "Some company-period observations report only part of the selected specific-account set in one aligned snapshot. "
+                    "Those metrics are left missing instead of mixing values across different filings."
+                )
+
         latest["val_usd_mm"] = latest["val"] / USD_MM_DIVISOR
         if {"Revenue", "Net Income"}.issubset(set(metrics)) and "flow_context_source" in latest.columns:
             strict_periods = (
@@ -3125,7 +4044,22 @@ def render_panel(ticker_options: list[str], ticker_map: pd.DataFrame, user_agent
                     "Some company-period observations could not be paired from the same filing XBRL context for `Revenue` and `Net Income`; those cases use the aligned companyfacts rows."
                 )
 
-        out_cols = ["ticker", "metric", "fy", "fp", "end", "val", "val_usd_mm", "tag", "source_type", "quality_flag", "form", "filed"]
+        out_cols = [
+            "ticker",
+            "metric",
+            "fy",
+            "fp",
+            "end",
+            "val",
+            "val_usd_mm",
+            "tag",
+            "source_type",
+            "quality_flag",
+            "form",
+            "filed",
+            "aligned_snapshot_metric_count",
+            "aligned_snapshot_has_all_selected_metrics",
+        ]
         if "flow_context_source" in latest.columns:
             out_cols.extend(["flow_context_source", "flow_context_ref", "flow_filing_accession"])
         out = latest[out_cols]
@@ -3156,7 +4090,8 @@ def render_panel(ticker_options: list[str], ticker_map: pd.DataFrame, user_agent
                 axis=1,
             )
         out_display = out.rename(columns={"val_usd_mm": "value_usd_mm", "val": "value_usd_raw"})
-        out_display.insert(4, "period_label", out_display.apply(lambda r: format_period_label(r["fy"], r["fp"]), axis=1))
+        out_display.insert(1, "account_mode", account_mode)
+        out_display.insert(5, "period_label", out_display.apply(lambda r: format_period_label(r["fy"], r["fp"]), axis=1))
         panel_link_cols = [c for c in ["primary_filing_link", "flow_filing_link"] if c in out_display.columns]
         st.dataframe(
             out_display.sort_values(["ticker", "end", "metric"]),
@@ -3164,6 +4099,11 @@ def render_panel(ticker_options: list[str], ticker_map: pd.DataFrame, user_agent
             hide_index=True,
             column_config=build_link_column_config(panel_link_cols) if panel_link_cols else None,
         )
+        if not mode_spec["enable_structure_checks"]:
+            coverage_summary = build_panel_coverage_summary(latest, metrics)
+            if not coverage_summary.empty:
+                st.caption("Specific-account coverage by company across the selected periods.")
+                st.dataframe(coverage_summary, use_container_width=True, hide_index=True)
         st.download_button(
             "Download panel CSV",
             out_display.to_csv(index=False),
@@ -3175,7 +4115,7 @@ def render_panel(ticker_options: list[str], ticker_map: pd.DataFrame, user_agent
 def main() -> None:
     st.set_page_config(page_title="EDGAR Explorer", layout="wide")
     st.title("EDGAR Explorer")
-    st.caption("Financial data extraction from SEC EDGAR in Cross-Section, Time-Series, Panel, and Debt Distribution formats.")
+    st.caption("Financial data extraction from SEC EDGAR in Cross-Section, Account Distribution, Time-Series, Panel, and Debt Distribution formats.")
     st.caption(f"Unit standard across the app: {USD_MM_LABEL}.")
 
     with st.sidebar:
@@ -3254,10 +4194,7 @@ def main() -> None:
             st.warning(
                 f"SEC SIC cache is stale ({cache_state['age_days']} days old). Industry filtering still works, but classifications may be outdated."
             )
-        filtered_ticker_map = sic_enriched[
-            (sic_enriched["issuer_category"] == "Operating company (SEC SIC-based)")
-            & sic_enriched["sicDescription"].notna()
-        ].copy()
+        filtered_ticker_map = select_operating_company_ticker_map(sic_enriched)
         if filtered_ticker_map.empty:
             st.error("No operating companies with SEC SIC metadata are available for industry-first selection.")
             st.stop()
@@ -3298,20 +4235,71 @@ def main() -> None:
 
     ticker_options = filtered_ticker_map["ticker"].tolist()
 
-    tab1, tab2, tab3, tab4 = st.tabs(["Cross-Section", "Time Series", "Panel", "Debt Distribution"])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(
+        ["Cross-Section", "Account Distribution", "Time Series", "Panel", "Debt Distribution"]
+    )
 
     with tab1:
         render_cross_section(ticker_options, filtered_ticker_map, user_agent)
 
     with tab2:
-        render_time_series(ticker_options, filtered_ticker_map, user_agent)
+        render_account_distribution(filtered_ticker_map, selection_mode)
 
     with tab3:
-        render_panel(ticker_options, filtered_ticker_map, user_agent)
+        render_time_series(ticker_options, filtered_ticker_map, user_agent)
 
     with tab4:
+        render_panel(ticker_options, filtered_ticker_map, user_agent)
+
+    with tab5:
         render_debt_distribution(ticker_options, filtered_ticker_map, user_agent)
 
 
 if __name__ == "__main__":
     main()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
